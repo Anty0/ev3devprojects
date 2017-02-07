@@ -5,10 +5,10 @@ from ev3dev.auto import *
 # ------Input--------
 print('Setting input values')
 POWER = 100
-TARGET = 65
-KP = float(2.5)  # 0.65  # Proportional gain. Start value 1
-KD = float(7)  # 1  # Derivative gain. Start value 0
-KI = float(0.15)  # 0.02  # Integral gain. Start value 0
+TARGET = 55  # 65  # None = center
+KP = float(2.5)  # float(5)  # 0.65  # Proportional gain. Start value 1
+KD = float(8)  # float(30)  # 1  # Derivative gain. Start value 0
+KI = float(0.15)  # float(0.15)  # 0.02  # Integral gain. Start value 0
 DIRECTION = -1
 MIN_REFLECT = None  # None = autodetect
 MAX_REFLECT = None  # None = autodetect
@@ -47,16 +47,16 @@ def detectMinMaxReflect():
     MIN_REFLECT = 100
     MAX_REFLECT = 0
 
-    LEFT_MOTOR.run_to_rel_pos(speed_sp=POWER * 2, position_sp=100)
-    RIGHT_MOTOR.run_to_rel_pos(speed_sp=POWER * 2, position_sp=-100)
+    LEFT_MOTOR.run_to_rel_pos(speed_sp=POWER * 2, position_sp=150)
+    RIGHT_MOTOR.run_to_rel_pos(speed_sp=POWER * 2, position_sp=-150)
     scanReflect()
 
-    LEFT_MOTOR.run_to_rel_pos(position_sp=-200)
-    RIGHT_MOTOR.run_to_rel_pos(position_sp=200)
+    LEFT_MOTOR.run_to_rel_pos(position_sp=-300)
+    RIGHT_MOTOR.run_to_rel_pos(position_sp=300)
     scanReflect()
 
-    LEFT_MOTOR.run_to_rel_pos(position_sp=100)
-    RIGHT_MOTOR.run_to_rel_pos(position_sp=-100)
+    LEFT_MOTOR.run_to_rel_pos(position_sp=150)
+    RIGHT_MOTOR.run_to_rel_pos(position_sp=-150)
     scanReflect()
 
     LEFT_MOTOR.reset()
@@ -67,6 +67,9 @@ def detectMinMaxReflect():
 
 if MIN_REFLECT is None or MAX_REFLECT is None:
     detectMinMaxReflect()
+
+if TARGET is None:
+    TARGET = (MAX_REFLECT - MIN_REFLECT) / 2 + MIN_REFLECT
 
 
 def reset():

@@ -47,9 +47,9 @@ def run():
 
     def getActualScannerPos():
         scanner_position = SCANNER_MOTOR.position
-        if scanner_position < -30:
+        if scanner_position < -35:
             return 0
-        if scanner_position > 30:
+        if scanner_position > 35:
             return 2
         return 1
 
@@ -71,7 +71,7 @@ def run():
         results_left_ratio = scan_results[2] / (scan_results[0] if scan_results[0] != 0 else 0.1)
         results_right_ratio = scan_results[0] / (scan_results[2] if scan_results[2] != 0 else 0.1)
 
-        speed_mul = (scan_results[1] * 4 - MAX_DISTANCE * 0.7) / MAX_DISTANCE
+        speed_mul = (min(scan_results[0], scan_results[1], scan_results[2]) * 4 - MAX_DISTANCE * 0.7) / MAX_DISTANCE
         # if abs(speed_mul) < 0.25:
         #     if speed_mul == 0:
         #         speed_mul = -0.25
@@ -113,11 +113,11 @@ def run():
         RIGHT_MOTOR.duty_cycle_sp = right_speed
 
     try:
-        rotateScanner(90)
+        rotateScanner(100)
         while 'running' in SCANNER_MOTOR.state:
             pass
 
-        rotateScanner(-90)
+        rotateScanner(-100)
         while 'running' in SCANNER_MOTOR.state:
             writeTmpResult(DISTANCE_SENSOR.value(), getActualScannerPos())
         next_positive = True
@@ -125,7 +125,7 @@ def run():
         LEFT_MOTOR.run_direct()
         RIGHT_MOTOR.run_direct()
         while True:
-            scanner_target = 90 if next_positive else -90
+            scanner_target = 100 if next_positive else -100
             next_positive = not next_positive
             rotateScanner(scanner_target)
             while 'running' in SCANNER_MOTOR.state:

@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-import sys
 from time import sleep, time as get_time
 
-import prepare as const
+import lineFollower.prepare as const
 
 
 def steering(course, power):
-    sys.stdout.write('\r' + str(course))
+    # sys.stdout.write('\r' + str(course))
     if course >= 0:
         if course > 100:
             power_right = 0
@@ -27,19 +26,31 @@ def steering(course, power):
 
 def run():
     try:
-        max_error = min(abs(100 - const.TARGET), abs(const.TARGET - 100)) * 0.8
-        max_change = max_error * 0.3
+        max_positive_error = abs(100 - const.TARGET) * 0.6
+        max_negative_error = abs(-const.TARGET) * 0.6
+        # max_error = min(max_positive_error, max_negative_error) * 0.8
+        # max_change = max_error * 0.3
         last_error = error = integral = 0
         const.LEFT_MOTOR.run_direct()
         const.RIGHT_MOTOR.run_direct()
         time = get_time()
         while True:
             ref_read = const.COLOR_SENSOR.value()
-            error = const.TARGET - (100 * (ref_read - const.MIN_REFLECT) / (const.MAX_REFLECT - const.MIN_REFLECT))
+            read_percent = 100 * (ref_read - const.MIN_REFLECT) / (const.MAX_REFLECT - const.MIN_REFLECT)
+            error = const.TARGET - read_percent
+            if error < 0:
+                error *= max_negative_error / max_positive_error
+            elif error > 0:
+                error *= max_positive_error / max_negative_error
 
-            if const.STOP_ON_PATH_END and error > max_error and abs(last_error - error) > max_change:
-                print('Detected path end')
-                break
+            # if error > 0:
+            #     error *= max_negative_error / max_positive_error
+            # elif error < 0:
+            #     error *= max_positive_error / max_negative_error
+
+            # if const.STOP_ON_PATH_END and error > max_error and abs(last_error - error) > max_change:
+            #     print('Detected path end')
+            #     break
 
             derivative = error - last_error
             last_error = error
