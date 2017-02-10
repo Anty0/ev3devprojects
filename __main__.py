@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import webAdministration.WebServer
+import web_administration.web_server
 
 # if __name__ == '__main__':
-webAdministration.WebServer.main()
+web_administration.web_server.run()

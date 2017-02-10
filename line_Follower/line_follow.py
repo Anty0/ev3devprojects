@@ -2,7 +2,7 @@
 
 from time import sleep, time as get_time
 
-import lineFollower.prepare as const
+import line_Follower.prepare as const
 
 
 def steering(course, power):
