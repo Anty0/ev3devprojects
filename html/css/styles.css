@@ -1,0 +1,97 @@
+@font-face {
+    font-family: "Source Code Pro";
+    src: url(../font/SourceCodePro-Medium.otf);
+}
+
+html, body {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    font-family: "Source Code Pro", "Ubuntu Mono", monospace;
+    font-size: 0.75em;
+    color: white;
+    background-color: black;
+}
+
+#programs-list {
+    margin: 15px auto;
+    max-width: 500px;
+}
+
+.program-line {
+    padding: 5px 10px;
+    margin: 10px 0;
+    background-color: gray;
+}
+
+.program-line-name {
+
+}
+
+.program-line-state-text {
+
+}
+
+.program-line-fail-text {
+    display: none;
+    color: lightcoral;
+}
+
+.program-line-button {
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    border: solid 1px #20538D;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
+    -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 1px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 1px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 1px rgba(0, 0, 0, 0.2);
+    background: #4479BA;
+    color: #FFF !important;
+    padding: 8px 12px;
+    text-decoration: none !important;
+    outline: 0 !important;
+    cursor: pointer;
+}
+
+.program-line-button:disabled {
+    border: solid 1px #404040;
+    background: #505050;
+}
+
+.program-line-button-state-switch {
+    display: inline-block;
+    float: right;
+    margin: 10px;
+}
+
+.program-line-button-update-config {
+    display: inline-block;
+    float: right;
+}
+
+.program-line-config {
+    padding: 5px 10px;
+    margin: 10px 0;
+    background-color: darkgray;
+    /*display: none;*/
+}
+
+.program-line-input {
+    padding: 0 4px;
+    color: black;
+}
+
+.program-line-string-input {
+
+}
+
+.program-line-integer-input {
+
+}
+
+.program-line-float-input {
+
+}
