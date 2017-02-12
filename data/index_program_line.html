@@ -2,10 +2,17 @@
     <a id="program-<!--robot_program_name-->-state-switch" class="program-line-button program-line-button-state-switch"
        onclick="handleStartStopClick('<!--robot_program_name-->')"><!--robot_program_state_switch--></a>
     <h5 class="program-line-name"><!--robot_program_name--></h5>
-    <p class="program-line-state-text">State: <b id="program-<!--robot_program_name-->-state"><!--robot_program_state--></b></p>
-    <p class="program-line-fail-text" id="program-<!--robot_program_name-->-fail-text"><b>Failed to proceed last request</b></p>
+    <p class="program-line-text program-line-state-text">State: <b id="program-<!--robot_program_name-->-state">
+        <!--robot_program_state--></b></p>
+    <p class="program-line-text">
+        <b class="program-line-success-text" id="program-<!--robot_program_name-->-success-text">Last request was
+            successfully proceed.</b>
+        <b class="program-line-fail-text" id="program-<!--robot_program_name-->-fail-text">Failed to proceed last
+            request.</b>
+        &nbsp;
+    </p>
     <div id="program-<!--robot_program_name-->-config" class="program-line-config">
-        <a class="program-line-button program-line-button-update-config"
+        <a id="program-<!--robot_program_name-->-update" class="program-line-button program-line-button-update-config"
            onclick="handleUpdateConfigClick('<!--robot_program_name-->')">Update</a>
         <!--robot_program_config-->
         <label for="program-<!--robot_program_name-->-config-auto-update">Automatically update config</label>

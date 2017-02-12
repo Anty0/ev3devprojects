@@ -30,6 +30,10 @@ body {
 
 }
 
+.program-line-text {
+
+}
+
 .program-line-state-text {
 
 }
@@ -37,6 +41,11 @@ body {
 .program-line-fail-text {
     display: none;
     color: lightcoral;
+}
+
+.program-line-success-text {
+    display: none;
+    color: lawngreen;
 }
 
 .program-line-button {
@@ -93,5 +102,9 @@ body {
 }
 
 .program-line-float-input {
+
+}
+
+.program-line-boolean-input {
 
 }

@@ -1,21 +1,35 @@
+Array.prototype.contains = function (v) {
+    return this.indexOf(v) > -1;
+};
+running = [];
+
 function extractConfig(programMame) {
     var idStart = programMame + '-';
     var result = {};
     $('input').filter(function (index, element) {
-        return element.id.startsWith(idStart);
+        return element.id.indexOf(idStart) == 0;
     }).each(function (index, element) {
-        result[element.id.substring(idStart.length)] = element.value
+        result[element.id.substring(idStart.length)] =
+            element.type == 'checkbox' ? element.checked : element.value;
     });
     return result;
 }
 
+function extractConfigValue(programName, valueName) {
+    var element = $('input#' + programName + '-' + valueName)[0];
+    return element.type == 'checkbox' ? element.checked : element.value;
+}
+
 function handleStartStopClick(programMame) {
+    if (running.contains(programMame)) return;
+    running.push(programMame);
+
     console.log('Called start/stop of ' + programMame);
 
     var stateText = $('#program-' + programMame + '-state');
     var startStopButton = $('#program-' + programMame + '-state-switch');
-    var failText = $('program-' + programMame + '-fail-text');
-    failText.hide();
+    var successText = $('#program-' + programMame + '-success-text');
+    var failText = $('#program-' + programMame + '-fail-text');
     startStopButton.disabled = true;
 
     var config = extractConfig(programMame);
@@ -23,29 +37,99 @@ function handleStartStopClick(programMame) {
     $.ajax({
         async: true,
         method: 'POST',
-        url: 'execute.esp',
+        url: 'commands/execute.esp',
         data: {
             name: programMame,
             config: JSON.stringify(config)
         },
         dataType: 'json',
         success: function(output, textStatus, jqXHR) {
+            failText.hide();
             startStopButton[0].innerHTML = output.stateSwitchText;
             stateText[0].innerHTML = output.stateText;
+            if (output.showSuccessInfo == 'true') {
+                successText.show();
+            }
         },
         error: function (jqXHR, textStatus, errorThrown) {
+            successText.hide();
             failText.show();
         },
         complete: function (jqXHR, status) {
             startStopButton.disabled = false;
+            running.splice(running.indexOf(programMame), 1)
         }
     });
 }
 
 function handleUpdateConfigClick(programMame) {
-    console.log('Called update config of ' + programMame);
+    if (running.contains(programMame)) return;
+    running.push(programMame);
+
+    var updateButton = $('#program-' + programMame + '-update');
+    var successText = $('#program-' + programMame + '-success-text');
+    var failText = $('#program-' + programMame + '-fail-text');
+    updateButton.disabled = true;
+
+    var config = extractConfig(programMame);
+
+    $.ajax({
+        async: true,
+        method: 'POST',
+        url: 'commands/updateConfig.esp',
+        data: {
+            name: programMame,
+            config: JSON.stringify(config)
+        },
+        success: function (output, textStatus, jqXHR) {
+            failText.hide();
+            successText.show();
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            successText.hide();
+            failText.show();
+        },
+        complete: function (jqXHR, status) {
+            updateButton.disabled = false;
+            running.splice(running.indexOf(programMame), 1)
+        }
+    });
 }
 
-function handleConfigChange(programMame, configName) {
-    console.log('Called config ' + configName + ' change of ' + programMame);
+function handleConfigChange(programMame, valueName) {
+    var autoUpdateCheckbox = $('input#program-' + programMame + '-config-auto-update');
+    if (!autoUpdateCheckbox[0].checked) return;
+
+    if (running.contains(programMame)) return;
+    running.push(programMame);
+
+    var updateButton = $('#program-' + programMame + '-update');
+    var successText = $('#program-' + programMame + '-success-text');
+    var failText = $('#program-' + programMame + '-fail-text');
+    updateButton.disabled = true;
+
+    var value = extractConfigValue(programMame, valueName);
+
+    $.ajax({
+        async: true,
+        method: 'POST',
+        url: 'commands/updateConfigValue.esp',
+        data: {
+            name: programMame,
+            target: valueName,
+            value: value
+        },
+        success: function (output, textStatus, jqXHR) {
+            failText.hide();
+            successText.show();
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            successText.hide();
+            failText.show();
+        },
+        complete: function (jqXHR, status) {
+            updateButton.disabled = false;
+            running.splice(running.indexOf(programMame), 1)
+        }
+    });
 }
