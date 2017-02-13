@@ -6,6 +6,7 @@ from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
 
+# Enable logging output
 ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
