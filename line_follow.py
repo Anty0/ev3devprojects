@@ -59,7 +59,10 @@ class LineFollowController(SimpleRobotProgramController):
             self.set_private_config_value('MAX_REFLECT', None)
 
         def next_power():
-            self.last_power += self.power_regulator.regulate(self.last_power)
+            if self.get_config_value('REGULATE_TARGET_POWER_CHANGE'):
+                self.last_power += self.power_regulator.regulate(self.last_power)
+            else:
+                self.last_power = self.power_regulator.get_target()
             return self.last_power
 
         def get_min_reflex():

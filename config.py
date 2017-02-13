@@ -31,6 +31,7 @@ ROBOT_MOTOR_SCANNER_GEAR_RATIO = 20 / 12
 # Line follower
 LINE_FOLLOWER_TARGET_CYCLE_TIME = 0.01
 LINE_FOLLOWER_TARGET_POWER = 100
+LINE_FOLLOWER_REGULATE_TARGET_POWER_CHANGE = True
 LINE_FOLLOWER_TARGET_REFLECT = 55  # 65  # None = center
 LINE_FOLLOWER_REG_STEER_P = float(1)  # Proportional gain. Start value 1
 LINE_FOLLOWER_REG_STEER_D = float(0)  # Derivative gain. Start value 0
@@ -62,6 +63,11 @@ config_values['PAUSE_POWER'] = {
     'display_name': 'Pause',
     'type': 'bool',
     'default_value': False
+}
+config_values['REGULATE_TARGET_POWER_CHANGE'] = {
+    'display_name': 'Regulate target power change',
+    'type': 'bool',
+    'default_value': LINE_FOLLOWER_REGULATE_TARGET_POWER_CHANGE
 }
 config_values['TARGET_POWER'] = {
     'display_name': 'Target power',
