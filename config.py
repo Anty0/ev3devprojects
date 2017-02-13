@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C
@@ -18,6 +19,8 @@ log = logging.getLogger(__name__)
 
 # Server
 SERVER_PORT = 8000
+SERVER_HTML_DIR = os.curdir + os.sep + 'html'
+SERVER_DATA_DIR = os.curdir + os.sep + 'data'
 
 # Robot
 ROBOT_MOTOR_LEFT_PORT = OUTPUT_B

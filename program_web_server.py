@@ -23,10 +23,10 @@ running_controllers = {}
 
 class ProgramsPageWebHandler(FilesWebHandler):
     def get_html_dir(self):
-        return os.curdir + os.sep + 'html'
+        return config.SERVER_HTML_DIR
 
     def get_data_dir(self):
-        return os.curdir + os.sep + 'data'
+        return config.SERVER_DATA_DIR
 
     def command_index(self, path, post_args, get_args, data):
         data_dir = self.get_data_dir()
