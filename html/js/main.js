@@ -24,8 +24,6 @@ function handleStartStopClick(programMame) {
     if (running.contains(programMame)) return;
     running.push(programMame);
 
-    console.log('Called start/stop of ' + programMame);
-
     var stateText = $('#program-' + programMame + '-state');
     var startStopButton = $('#program-' + programMame + '-state-switch');
     var successText = $('#program-' + programMame + '-success-text');

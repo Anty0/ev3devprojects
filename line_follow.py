@@ -106,7 +106,8 @@ class LineFollowController(SimpleRobotProgramController):
             elif sleep_time < -target_cycle_time * 5:
                 log.warn('Regulation is getting late. It\'s late %s seconds. Use bigger cycle time.' % sleep_time)
             last_time += target_cycle_time
-        pass
+
+        reset_hardware()
 
     def on_config_change(self):
         super().on_config_change()

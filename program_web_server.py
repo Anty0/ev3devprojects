@@ -7,6 +7,8 @@ import signal
 import threading
 from http.server import HTTPServer
 
+from odict.pyodict import odict
+
 import config
 import hardware
 from auto_drive import AutoDriveRobotProgram
@@ -15,7 +17,7 @@ from web_server import FilesWebHandler
 
 log = logging.getLogger(__name__)
 
-robot_programs = {}
+robot_programs = odict()
 running_controllers = {}
 
 
@@ -204,7 +206,7 @@ def run():
                 server.shutdown()
                 server.server_close()
         finally:
-            hardware.reset()
+            hardware.reset_hardware()
 
     threading.Thread(target=start_server).start()
     log.info("Started HTTP server on port %d" % config.SERVER_PORT)

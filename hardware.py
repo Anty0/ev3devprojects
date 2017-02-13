@@ -37,7 +37,7 @@ else:
     MAX_DISTANCE = -1
 
 
-def reset():
+def reset_hardware():
     if HAS_WHEELS:
         LEFT_MOTOR.reset()
         RIGHT_MOTOR.reset()
