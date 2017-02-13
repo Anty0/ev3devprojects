@@ -68,9 +68,6 @@ def detectMinMaxReflect():
 if MIN_REFLECT is None or MAX_REFLECT is None:
     detectMinMaxReflect()
 
-if TARGET is None:
-    TARGET = (MAX_REFLECT - MIN_REFLECT) / 2 + MIN_REFLECT
-
 
 def reset():
     print('Stopping motors')

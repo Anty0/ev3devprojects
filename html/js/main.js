@@ -44,11 +44,21 @@ function handleStartStopClick(programMame) {
         },
         dataType: 'json',
         success: function(output, textStatus, jqXHR) {
-            failText.hide();
             startStopButton[0].innerHTML = output.stateSwitchText;
             stateText[0].innerHTML = output.stateText;
-            if (output.showSuccessInfo == 'true') {
-                successText.show();
+            switch (output.showStatus) {
+                case 'success':
+                    failText.hide();
+                    successText.show();
+                    break;
+                case 'fail':
+                    successText.hide();
+                    failText.show();
+                    break;
+                case 'none':
+                default:
+                    successText.hide();
+                    failText.hide();
             }
         },
         error: function (jqXHR, textStatus, errorThrown) {
@@ -81,9 +91,15 @@ function handleUpdateConfigClick(programMame) {
             name: programMame,
             config: JSON.stringify(config)
         },
+        dataType: 'json',
         success: function (output, textStatus, jqXHR) {
-            failText.hide();
-            successText.show();
+            if (output.success == 'true') {
+                failText.hide();
+                successText.show();
+            } else {
+                successText.hide();
+                failText.show();
+            }
         },
         error: function (jqXHR, textStatus, errorThrown) {
             successText.hide();
@@ -119,9 +135,15 @@ function handleConfigChange(programMame, valueName) {
             target: valueName,
             value: value
         },
+        dataType: 'json',
         success: function (output, textStatus, jqXHR) {
-            failText.hide();
-            successText.show();
+            if (output.success == 'true') {
+                failText.hide();
+                successText.show();
+            } else {
+                successText.hide();
+                failText.show();
+            }
         },
         error: function (jqXHR, textStatus, errorThrown) {
             successText.hide();

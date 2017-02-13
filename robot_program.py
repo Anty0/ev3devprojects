@@ -32,18 +32,14 @@ class RobotProgram:
         pass
 
 
-class RobotProgramInstance:
-    def stop(self):
-        pass
-
-    def wait_to_exit(self):
-        pass
-
-
 class SimpleRobotProgramController(RobotProgramController):
-    def __init__(self, robot_program, robot_program_instance, config=None):
+    def __init__(self, robot_program, config=None, private_config=None):
         super().__init__(robot_program)
-        self.robot_program_instance = robot_program_instance
+
+        if private_config is None:
+            private_config = {}
+        self.private_config = private_config
+
         self.config = {}
         self._update_config(config)
 
@@ -59,6 +55,15 @@ class SimpleRobotProgramController(RobotProgramController):
     def update_config(self, config=None):
         self._update_config(config)
         self.on_config_change()
+
+    def set_private_config_value(self, name, value):
+        self.private_config[name] = value
+        return True
+
+    def get_private_config_value(self, name):
+        if name not in self.private_config:
+            return None
+        return self.private_config[name]
 
     def set_config_value(self, name, value):
         if name not in self.config:
@@ -93,9 +98,3 @@ class SimpleRobotProgramController(RobotProgramController):
 
     def on_config_value_change(self, name, new_value):
         pass
-
-    def stop(self):
-        self.robot_program_instance.stop()
-
-    def wait_to_exit(self):
-        self.robot_program_instance.wait_to_exit()
