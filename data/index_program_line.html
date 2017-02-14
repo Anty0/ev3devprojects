@@ -11,11 +11,18 @@
             request.</b>
         &nbsp;
     </p>
-    <div id="program-<!--robot_program_name-->-config" class="program-line-config">
-        <a id="program-<!--robot_program_name-->-update" class="program-line-button program-line-button-update-config"
-           onclick="handleUpdateConfigClick('<!--robot_program_name-->')">Update</a>
-        <!--robot_program_config-->
-        <label for="program-<!--robot_program_name-->-config-auto-update">Automatically update config</label>
-        <input type="checkbox" id="program-<!--robot_program_name-->-config-auto-update" checked>
+    <div class="program-line-content">
+        <div id="program-<!--robot_program_name-->-config" class="program-line-content-child program-line-config">
+            <!--robot_program_config-->
+            <label for="program-<!--robot_program_name-->-config-auto-update">Automatically update config</label>
+            <input type="checkbox" id="program-<!--robot_program_name-->-config-auto-update"
+                   class="program-line-config-auto-update" checked>
+            <a id="program-<!--robot_program_name-->-update"
+               class="program-line-button program-line-button-update-config"
+               onclick="handleUpdateConfigClick('<!--robot_program_name-->')">Update</a>
+        </div>
+        <div id="program-<!--robot_program_name-->-additional-controls"
+             class="program-line-content-child program-line-additional-controls">
+        </div>
     </div>
 </div>

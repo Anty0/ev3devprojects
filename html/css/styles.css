@@ -21,13 +21,14 @@ h1#title {
 
 #programs-list {
     margin: 15px auto;
-    max-width: 500px;
+    width: 1200px;
 }
 
 .program-line {
     padding: 5px 10px;
     margin: 10px 0;
     background-color: gray;
+    border-radius: 5px;
 }
 
 .program-line-name {
@@ -81,32 +82,52 @@ h1#title {
 }
 
 .program-line-button-update-config {
-    display: inline-block;
+    display: block;
     float: right;
 }
 
-.program-line-config {
+.program-line-content {
+    display: flex;
+    padding: 0;
+    margin: 0;
+}
+
+.program-line-content-child {
+    flex: 1;
     padding: 5px 10px;
     margin: 10px 0;
     background-color: darkgray;
-    /*display: none;*/
+    border-radius: 3px;
+}
+
+.program-line-config {
+    margin-right: 5px;
+}
+
+.program-line-additional-controls {
+    margin-left: 5px;
 }
 
 .program-line-input {
     padding: 0 4px;
-    color: black;
+    background-color: grey;
+    /*color: black;*/
+}
+
+.program-line-config-auto-update {
+
 }
 
 .program-line-string-input {
-
+    float: right;
 }
 
 .program-line-integer-input {
-
+    float: right;
 }
 
 .program-line-float-input {
-
+    float: right;
 }
 
 .program-line-boolean-input {

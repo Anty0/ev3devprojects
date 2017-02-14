@@ -101,6 +101,7 @@ class ProgramsPageWebHandler(FilesWebHandler):
 
         program_name = post_args[b'name'][0].decode()
         running = program_name in running_controllers
+        additional_controls = ''
         status = 'none'
 
         if not running:
@@ -110,10 +111,12 @@ class ProgramsPageWebHandler(FilesWebHandler):
                         .execute(json.loads(post_args[b'config'][0].decode()))
                     if program_controller is not None:
                         running_controllers[program_controller.robot_program.name] = program_controller
+                        additional_controls = program_controller.get_additional_controls()
                         running = True
                     else:
                         status = 'success'
                 except Exception:
+                    additional_controls = ''
                     status = 'fail'
         else:
             program_controller = running_controllers[program_name]
@@ -130,6 +133,7 @@ class ProgramsPageWebHandler(FilesWebHandler):
             self.wfile.write(json.dumps({
                 'stateText': 'running' if running else 'not running',
                 'stateSwitchText': 'Stop' if running else 'Start',
+                'additionalControls': additional_controls,
                 'showStatus': status
             }).encode())
 

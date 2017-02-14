@@ -28,6 +28,7 @@ function handleStartStopClick(programMame) {
     var startStopButton = $('#program-' + programMame + '-state-switch');
     var successText = $('#program-' + programMame + '-success-text');
     var failText = $('#program-' + programMame + '-fail-text');
+    var additionalControlsDiv = $('#program-' + programMame + '-additional-controls');
     startStopButton.disabled = true;
 
     var config = extractConfig(programMame);
@@ -44,6 +45,7 @@ function handleStartStopClick(programMame) {
         success: function(output, textStatus, jqXHR) {
             startStopButton[0].innerHTML = output.stateSwitchText;
             stateText[0].innerHTML = output.stateText;
+            additionalControlsDiv[0].innerHTML = output.additionalControls;
             switch (output.showStatus) {
                 case 'success':
                     failText.hide();

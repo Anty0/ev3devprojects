@@ -16,6 +16,9 @@ class RobotProgramController:
     def get_config_value(self, name):
         pass
 
+    def get_additional_controls(self):
+        pass
+
     def stop(self):
         pass
 
@@ -98,3 +101,6 @@ class SimpleRobotProgramController(RobotProgramController):
 
     def on_config_value_change(self, name, new_value):
         pass
+
+    def get_additional_controls(self):
+        return ''

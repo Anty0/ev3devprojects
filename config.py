@@ -23,9 +23,12 @@ SERVER_HTML_DIR = os.curdir + os.sep + 'html'
 SERVER_DATA_DIR = os.curdir + os.sep + 'data'
 
 # Robot
-ROBOT_MOTOR_WHEEL_LEFT_PORT = OUTPUT_B
-ROBOT_MOTOR_WHEEL_RIGHT_PORT = OUTPUT_C
-ROBOT_MOTOR_WHEEL_GEAR_RATIO = 1
+ROBOT_MOTOR_WHEELS_LEFT_PORT = OUTPUT_B
+ROBOT_MOTOR_WHEELS_RIGHT_PORT = OUTPUT_C
+ROBOT_MOTOR_WHEELS_DIAMETER = 1  # TODO: measure
+ROBOT_MOTOR_WHEELS_DISTANCE = 10  # TODO: measure
+ROBOT_MOTOR_WHEELS_GEAR_RATIO = 1  # TODO: measure
+
 ROBOT_MOTOR_SCANNER_PORT = OUTPUT_A
 ROBOT_MOTOR_SCANNER_GEAR_RATIO = 20 / 12
 
@@ -34,17 +37,24 @@ LINE_FOLLOWER_TARGET_CYCLE_TIME = 0.01
 LINE_FOLLOWER_TARGET_POWER = 100
 LINE_FOLLOWER_REGULATE_TARGET_POWER_CHANGE = True
 LINE_FOLLOWER_TARGET_REFLECT = 55  # 65  # None = center
+LINE_FOLLOWER_AUTO_LEARN_CONSTANTS = False  # TODO: add support
 LINE_FOLLOWER_REG_STEER_P = float(1)  # Proportional gain. Start value 1
 LINE_FOLLOWER_REG_STEER_D = float(0)  # Derivative gain. Start value 0
 LINE_FOLLOWER_REG_STEER_I = float(0)  # Integral gain. Start value 0
 LINE_FOLLOWER_LINE_SIDE = -1  # -1 == left; 1 == right
 LINE_FOLLOWER_OBSTACLE_AVOID = False  # TODO: add support
 LINE_FOLLOWER_OBSTACLE_AVOID_SIDE = -1  # -1 == left; 1 == right
+LINE_FOLLOWER_OBSTACLE_MIN_DISTANCE = 50
 LINE_FOLLOWER_COLLISION_AVOID = False  # TODO: add support
 LINE_FOLLOWER_SHARP_TURN_DETECT = False  # TODO: add support
 LINE_FOLLOWER_SHARP_TURN_ROTATE_SIDE = -1  # -1 == left; 1 == right
-LINE_FOLLOWER_STOP_ON_PATH_END = False  # TODO: add support
+LINE_FOLLOWER_STOP_ON_LINE_END = False  # TODO: add support
 config_values = odict()
+config_values['AUTO_LEARN_CONSTANTS'] = {
+    'display_name': 'Try auto-learn constants (beta)',
+    'type': 'bool',
+    'default_value': LINE_FOLLOWER_AUTO_LEARN_CONSTANTS
+}
 config_values['REG_STEER_P'] = {
     'display_name': 'Regulator STEER-P',
     'type': 'float',
@@ -115,6 +125,11 @@ config_values['OBSTACLE_AVOID_SIDE'] = {
     'type': 'int',  # TODO: add enum support and use it here
     'default_value': LINE_FOLLOWER_OBSTACLE_AVOID_SIDE
 }
+config_values['OBSTACLE_MIN_DISTANCE'] = {
+    'display_name': 'Minimal distance from obstacle',
+    'type': 'int',
+    'default_value': LINE_FOLLOWER_OBSTACLE_MIN_DISTANCE
+}
 config_values['COLLISION_AVOID'] = {
     'display_name': 'Robot collision avoid',
     'type': 'bool',
@@ -130,10 +145,10 @@ config_values['SHARP_TURN_ROTATE_SIDE'] = {
     'type': 'int',  # TODO: add enum support and use it here
     'default_value': LINE_FOLLOWER_SHARP_TURN_ROTATE_SIDE
 }
-config_values['STOP_ON_PATH_END'] = {
+config_values['STOP_ON_LINE_END'] = {
     'display_name': 'Stop on path end',
     'type': 'bool',
-    'default_value': LINE_FOLLOWER_STOP_ON_PATH_END
+    'default_value': LINE_FOLLOWER_STOP_ON_LINE_END
 }
 LINE_FOLLOWER_CONFIG_VALUES = config_values
 

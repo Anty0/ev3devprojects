@@ -2,8 +2,8 @@ from ev3dev.auto import *
 
 from config import *
 
-LEFT_MOTOR = LargeMotor(ROBOT_MOTOR_WHEEL_LEFT_PORT)
-RIGHT_MOTOR = LargeMotor(ROBOT_MOTOR_WHEEL_RIGHT_PORT)
+LEFT_MOTOR = LargeMotor(ROBOT_MOTOR_WHEELS_LEFT_PORT)
+RIGHT_MOTOR = LargeMotor(ROBOT_MOTOR_WHEELS_RIGHT_PORT)
 HAS_WHEELS = LEFT_MOTOR.connected and RIGHT_MOTOR.connected
 if HAS_WHEELS:
     LEFT_MOTOR.reset()
