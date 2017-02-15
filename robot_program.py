@@ -104,3 +104,20 @@ class SimpleRobotProgramController(RobotProgramController):
 
     def get_additional_controls(self):
         return ''
+
+
+class ControllerConfigWrapper:
+    def __init__(self, controller):
+        self.controller = controller
+
+    def set_config_value(self, name, value) -> bool:
+        return self.controller.set_config_value(name, value)
+
+    def get_config_value(self, name):
+        return self.controller.get_config_value(name)
+
+    def set_private_config_value(self, name, value):
+        return self.controller.set_private_config_value(name, value)
+
+    def get_private_config_value(self, name):
+        return self.controller.get_private_config_value(name)

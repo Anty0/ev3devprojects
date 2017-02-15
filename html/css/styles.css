@@ -3,6 +3,13 @@
     src: url(../font/SourceCodePro-Medium.otf);
 }
 
+.clear-fix::after {
+    content: " ";
+    display: block;
+    height: 0;
+    clear: both;
+}
+
 html, body {
     padding: 0;
     margin: 0;
@@ -21,7 +28,7 @@ h1#title {
 
 #programs-list {
     margin: 15px auto;
-    width: 1200px;
+    width: 500px;
 }
 
 .program-line {
@@ -82,30 +89,32 @@ h1#title {
 }
 
 .program-line-button-update-config {
-    display: block;
+    display: inline-block;
     float: right;
+    margin: 10px;
 }
 
 .program-line-content {
-    display: flex;
+    /*display: flex;*/
     padding: 0;
     margin: 0;
 }
 
 .program-line-content-child {
-    flex: 1;
+    /*flex: 1;*/
     padding: 5px 10px;
     margin: 10px 0;
+    min-height: 50px;
     background-color: darkgray;
     border-radius: 3px;
 }
 
 .program-line-config {
-    margin-right: 5px;
+    /*margin-right: 5px;*/
 }
 
 .program-line-additional-controls {
-    margin-left: 5px;
+    /*margin-left: 5px;*/
 }
 
 .program-line-input {

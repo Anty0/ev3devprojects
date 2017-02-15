@@ -5,11 +5,25 @@ import sys
 from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C
 from odict.pyodict import odict
 
+LOG_TMP = ''  # TODO: show in web page
+
+
+class LogSteam:
+    def flush(self):
+        sys.stdout.flush()
+        pass
+
+    def write(self, msg):
+        global LOG_TMP
+        LOG_TMP += msg
+        sys.stdout.write(msg)
+        pass
+
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
 
 # Enable logging output
-ch = logging.StreamHandler(sys.stdout)
+ch = logging.StreamHandler(LogSteam())
 ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
