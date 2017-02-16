@@ -26,8 +26,28 @@ h1#title {
     text-align: center;
 }
 
-#programs-list {
-    margin: 15px auto;
+div#log-container {
+    float: right;
+    margin: 15px;
+    padding: 0;
+    width: calc(100% - 560px);
+}
+
+div#log-wrapper {
+    padding: 5px 10px;
+    margin: 10px 0;
+    background-color: gray;
+    border-radius: 5px;
+}
+
+pre#log-content {
+
+}
+
+div#programs-list {
+    float: left;
+    margin: 15px;
+    padding: 0;
     width: 500px;
 }
 
@@ -115,6 +135,7 @@ h1#title {
 
 .program-line-additional-controls {
     /*margin-left: 5px;*/
+    display: none;
 }
 
 .program-line-input {

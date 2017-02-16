@@ -5,7 +5,7 @@ import sys
 from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C
 from odict.pyodict import odict
 
-LOG_TMP = ''  # TODO: show in web page
+LOG_TMP = ''
 
 
 class LogSteam:
@@ -39,9 +39,10 @@ SERVER_DATA_DIR = os.curdir + os.sep + 'data'
 # Robot
 ROBOT_MOTOR_WHEELS_LEFT_PORT = OUTPUT_B
 ROBOT_MOTOR_WHEELS_RIGHT_PORT = OUTPUT_C
-ROBOT_MOTOR_WHEELS_DIAMETER = 1  # TODO: measure
-ROBOT_MOTOR_WHEELS_DISTANCE = 10  # TODO: measure
-ROBOT_MOTOR_WHEELS_GEAR_RATIO = 1  # TODO: measure
+ROBOT_MOTOR_WHEELS_DIAMETER = 4.3
+ROBOT_MOTOR_WHEELS_WIDTH = 2.1
+ROBOT_MOTOR_WHEELS_OFFSET = 10  # TODO: measure
+ROBOT_MOTOR_WHEELS_GEAR_RATIO = 1
 
 ROBOT_MOTOR_SCANNER_PORT = OUTPUT_A
 ROBOT_MOTOR_SCANNER_GEAR_RATIO = 20 / 12
@@ -53,16 +54,16 @@ LINE_FOLLOWER_REGULATE_TARGET_POWER_CHANGE = True
 LINE_FOLLOWER_TARGET_REFLECT = 55  # 65  # None = center
 LINE_FOLLOWER_AUTO_LEARN_CONSTANTS = False  # TODO: add support
 LINE_FOLLOWER_REG_STEER_P = float(1)  # Proportional gain. Start value 1
-LINE_FOLLOWER_REG_STEER_D = float(0)  # Derivative gain. Start value 0
 LINE_FOLLOWER_REG_STEER_I = float(0)  # Integral gain. Start value 0
+LINE_FOLLOWER_REG_STEER_D = float(0)  # Derivative gain. Start value 0
 LINE_FOLLOWER_LINE_SIDE = -1  # -1 == left; 1 == right
-LINE_FOLLOWER_OBSTACLE_AVOID = False  # TODO: add support
+LINE_FOLLOWER_OBSTACLE_AVOID = False
 LINE_FOLLOWER_OBSTACLE_AVOID_SIDE = -1  # -1 == left; 1 == right
 LINE_FOLLOWER_OBSTACLE_MIN_DISTANCE = 50
-LINE_FOLLOWER_COLLISION_AVOID = False  # TODO: add support
-LINE_FOLLOWER_SHARP_TURN_DETECT = False  # TODO: add support
+LINE_FOLLOWER_COLLISION_AVOID = False
+LINE_FOLLOWER_SHARP_TURN_DETECT = False
 LINE_FOLLOWER_SHARP_TURN_ROTATE_SIDE = -1  # -1 == left; 1 == right
-LINE_FOLLOWER_STOP_ON_LINE_END = False  # TODO: add support
+LINE_FOLLOWER_STOP_ON_LINE_END = False
 config_values = odict()
 config_values['AUTO_LEARN_CONSTANTS'] = {
     'display_name': 'Try auto-learn constants (beta)',
@@ -74,15 +75,15 @@ config_values['REG_STEER_P'] = {
     'type': 'float',
     'default_value': LINE_FOLLOWER_REG_STEER_P
 }
-config_values['REG_STEER_D'] = {
-    'display_name': 'Regulator STEER-D',
-    'type': 'float',
-    'default_value': LINE_FOLLOWER_REG_STEER_D
-}
 config_values['REG_STEER_I'] = {
     'display_name': 'Regulator STEER-I',
     'type': 'float',
     'default_value': LINE_FOLLOWER_REG_STEER_I
+}
+config_values['REG_STEER_D'] = {
+    'display_name': 'Regulator STEER-D',
+    'type': 'float',
+    'default_value': LINE_FOLLOWER_REG_STEER_D
 }
 config_values['PAUSE_POWER'] = {
     'display_name': 'Pause',

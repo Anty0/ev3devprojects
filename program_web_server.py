@@ -22,14 +22,26 @@ running_controllers = {}
 
 
 class ProgramsPageWebHandler(FilesWebHandler):
-    def get_html_dir(self):
+    def _get_html_dir(self):
         return config.SERVER_HTML_DIR
 
-    def get_data_dir(self):
+    def _get_data_dir(self):
         return config.SERVER_DATA_DIR
 
+    def command_get_log(self, path, post_args, get_args, data):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+
+        if self.command != 'HEAD':
+            self.wfile.write(json.dumps({
+                'logText': config.LOG_TMP
+            }).encode())
+
+        return True
+
     def command_index(self, path, post_args, get_args, data):
-        data_dir = self.get_data_dir()
+        data_dir = self._get_data_dir()
         page_text_filename = data_dir + os.sep + data[0]
         program_line_filename = data_dir + os.sep + data[1]
         program_config_line_filename = data_dir + os.sep + data[2]

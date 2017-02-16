@@ -16,15 +16,19 @@ class FilesWebHandler(BaseHTTPRequestHandler):
         log.error(format % args)
         pass
 
-    def log_message(self, format, *args):
-        log.debug(format % args)
-        pass
+    # def log_message(self, format, *args):
+    #     log.debug(format % args)
+    #     pass
 
-    def get_html_dir(self):
+    def _get_html_dir(self):
         return os.curdir
 
     def resolve_post_args(self):
-        content_type, options_dictionary = cgi.parse_header(self.headers.get('content-type'))
+        content_type_header = self.headers.get('content-type')
+        if content_type_header is None:
+            return {}
+
+        content_type, options_dictionary = cgi.parse_header(content_type_header)
         if content_type == 'multipart/form-data':
             post_args = cgi.parse_multipart(self.rfile, options_dictionary)
         elif content_type == 'application/x-www-form-urlencoded':
@@ -44,7 +48,7 @@ class FilesWebHandler(BaseHTTPRequestHandler):
         return result
 
     def try_handle_request(self, path, post_args, get_args):
-        filename = self.get_html_dir() + os.sep + path
+        filename = self._get_html_dir() + os.sep + path
 
         if os.path.isdir(filename):
             if os.path.exists(filename + os.sep + 'index.html'):

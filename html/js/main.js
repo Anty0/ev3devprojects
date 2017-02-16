@@ -20,6 +20,20 @@ function extractConfigValue(programName, valueName) {
     return element.type == 'checkbox' ? element.checked : element.value;
 }
 
+setInterval(updateLog, 1000);
+
+function updateLog() {
+    $.ajax({
+        async: true,
+        method: 'POST',
+        url: 'commands/getLog.esp',
+        dataType: 'json',
+        success: function (output, textStatus, jqXHR) {
+            $('pre#log-content')[0].innerHTML = output.logText;
+        }
+    });
+}
+
 function handleStartStopClick(programMame) {
     if (running.contains(programMame)) return;
     running.push(programMame);
@@ -30,6 +44,7 @@ function handleStartStopClick(programMame) {
     var failText = $('#program-' + programMame + '-fail-text');
     var additionalControlsDiv = $('#program-' + programMame + '-additional-controls');
     startStopButton.disabled = true;
+    additionalControlsDiv.hide();
 
     var config = extractConfig(programMame);
 
@@ -46,6 +61,7 @@ function handleStartStopClick(programMame) {
             startStopButton[0].innerHTML = output.stateSwitchText;
             stateText[0].innerHTML = output.stateText;
             additionalControlsDiv[0].innerHTML = output.additionalControls;
+            if (output.additionalControls.length != 0) additionalControlsDiv.show();
             switch (output.showStatus) {
                 case 'success':
                     failText.hide();
