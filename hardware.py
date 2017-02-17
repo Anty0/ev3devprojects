@@ -56,5 +56,5 @@ def reset_hardware():
         SCANNER_MOTOR.reset()
         SCANNER_MOTOR.stop_action = 'brake'
 
-        if HAS_COLOR_SENSOR:
-            COLOR_SENSOR.mode = 'COL-REFLECT'
+    if HAS_COLOR_SENSOR:
+        COLOR_SENSOR.mode = 'COL-REFLECT'

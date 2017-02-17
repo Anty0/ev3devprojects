@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import math
 import threading
+
+import math
 
 import config as _config
 from hardware import *
@@ -9,8 +10,8 @@ from robot_program import *
 
 
 class AutoDriveController(SimpleRobotProgramController):
-    def __init__(self, robot_program):
-        super().__init__(robot_program)
+    def __init__(self, robot_program, config=None):
+        super().__init__(robot_program, config)
 
         self.stop = False
         self.thread = threading.Thread(target=self._run, daemon=True)
@@ -98,7 +99,7 @@ class AutoDriveController(SimpleRobotProgramController):
 
         rotate_scanner(-side_degrees)
         while not self.stop and 'running' in SCANNER_MOTOR.state:
-            write_tmp_result(DISTANCE_SENSOR.value(), get_actual_scanner_pos())
+            write_tmp_result(DISTANCE_SENSOR.value(), get_actual_scanner_pos(side_degrees))
         next_positive = True
 
         LEFT_MOTOR.run_direct()
@@ -109,7 +110,7 @@ class AutoDriveController(SimpleRobotProgramController):
             next_positive = not next_positive
             rotate_scanner(scanner_target)
             while 'running' in SCANNER_MOTOR.state:
-                write_tmp_result(DISTANCE_SENSOR.value(), get_actual_scanner_pos())
+                write_tmp_result(DISTANCE_SENSOR.value(), get_actual_scanner_pos(side_degrees))
 
         reset_hardware()
 
@@ -119,7 +120,7 @@ class AutoDriveController(SimpleRobotProgramController):
     def on_config_value_change(self, name, new_value):
         super().on_config_value_change(name, new_value)
 
-    def stop(self):
+    def request_exit(self):
         self.stop = True
 
     def wait_to_exit(self):
@@ -134,7 +135,7 @@ class AutoDriveRobotProgram(RobotProgram):
     def execute(self, config=None) -> RobotProgramController:
         if not HAS_WHEELS or not HAS_SCANNER_MOTOR or not HAS_DISTANCE_SENSOR:
             raise Exception('AutoDrive requires wheels and rotating scanner.')
-        return AutoDriveController(config)
+        return AutoDriveController(self, config)
 
 
 def run():
@@ -145,7 +146,7 @@ def run():
     except KeyboardInterrupt:
         pass
 
-    controller.stop()
+    controller.request_exit()
     controller.wait_to_exit()
 
 

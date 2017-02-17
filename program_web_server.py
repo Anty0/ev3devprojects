@@ -3,10 +3,12 @@
 import json
 import logging
 import os
-import signal
 import threading
+import traceback
 from http.server import HTTPServer
 
+import signal
+import sys
 from odict.pyodict import odict
 
 import config
@@ -127,12 +129,13 @@ class ProgramsPageWebHandler(FilesWebHandler):
                         running = True
                     else:
                         status = 'success'
-                except Exception:
+                except Exception as e:
+                    log.error(str(e))
                     additional_controls = ''
                     status = 'fail'
         else:
             program_controller = running_controllers[program_name]
-            program_controller.stop()
+            program_controller.request_exit()
             program_controller.wait_to_exit()
             del running_controllers[program_name]
             running = False

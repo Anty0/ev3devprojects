@@ -1,7 +1,7 @@
 import logging
 import os
-import sys
 
+import sys
 from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C
 from odict.pyodict import odict
 
@@ -31,6 +31,9 @@ root.addHandler(ch)
 
 log = logging.getLogger(__name__)
 
+# Other
+ENABLE_SOUNDS = True
+
 # Server
 SERVER_PORT = 8000
 SERVER_HTML_DIR = os.curdir + os.sep + 'html'
@@ -51,7 +54,7 @@ ROBOT_MOTOR_SCANNER_GEAR_RATIO = 20 / 12
 LINE_FOLLOWER_TARGET_CYCLE_TIME = 0.01
 LINE_FOLLOWER_TARGET_POWER = 100
 LINE_FOLLOWER_REGULATE_TARGET_POWER_CHANGE = True
-LINE_FOLLOWER_TARGET_REFLECT = 55  # 65  # None = center
+LINE_FOLLOWER_TARGET_REFLECT = 55
 LINE_FOLLOWER_AUTO_LEARN_CONSTANTS = False  # TODO: add support
 LINE_FOLLOWER_REG_STEER_P = float(1)  # Proportional gain. Start value 1
 LINE_FOLLOWER_REG_STEER_I = float(0)  # Integral gain. Start value 0

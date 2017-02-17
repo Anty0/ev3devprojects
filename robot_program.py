@@ -19,7 +19,7 @@ class RobotProgramController:
     def get_additional_controls(self):
         pass
 
-    def stop(self):
+    def request_exit(self):
         pass
 
     def wait_to_exit(self):
@@ -37,7 +37,7 @@ class RobotProgram:
 
 class SimpleRobotProgramController(RobotProgramController):
     def __init__(self, robot_program, config=None, private_config=None):
-        super().__init__(robot_program)
+        RobotProgramController.__init__(self, robot_program)
 
         if private_config is None:
             private_config = {}
@@ -52,8 +52,22 @@ class SimpleRobotProgramController(RobotProgramController):
         for name, info in self.robot_program.config_values.items():
             if name not in config:
                 config[name] = self.config[name] if name in self.config else info['default_value']
+            else:
+                config[name] = self._convert_config_value(name, config[name])
 
         self.config = config
+
+    def _convert_config_value(self, name, value):
+        value_type = self.robot_program.config_values[name]['type']
+        if value_type == 'str' or value_type == 'string':
+            value = str(value)
+        elif value_type == 'int' or value_type == 'integer':
+            value = int(value)
+        elif value_type == 'float':
+            value = float(value)
+        elif value_type == 'bool' or value_type == 'boolean':
+            value = bool(value)
+        return value
 
     def update_config(self, config=None):
         self._update_config(config)
@@ -74,17 +88,7 @@ class SimpleRobotProgramController(RobotProgramController):
                       + '\'. No config value with given name exists.')
             return False
 
-        value_type = self.robot_program.config_values[name]['type']
-        if value_type == 'str' or value_type == 'string':
-            value = str(value)
-        elif value_type == 'int' or value_type == 'integer':
-            value = int(value)
-        elif value_type == 'float':
-            value = float(value)
-        elif value_type == 'bool' or value_type == 'boolean':
-            value = bool(value)
-
-        self.config[name] = value
+        self.config[name] = self._convert_config_value(name, value)
         self.on_config_value_change(name, value)
         return True
 

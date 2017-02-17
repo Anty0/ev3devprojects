@@ -1,4 +1,5 @@
 import threading
+
 import time
 
 from robot_program import RobotProgramController
@@ -89,7 +90,7 @@ class BehaviourController(RobotProgramController, Behaviours):
     def stop_loop(self):
         return self.stop
 
-    def stop(self):
+    def request_exit(self):
         self.stop = True
 
     def wait_to_exit(self):

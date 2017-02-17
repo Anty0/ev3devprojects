@@ -19,7 +19,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         self.get_config_value('OBSTACLE_MIN_DISTANCE') * 0.8
 
     def take_control(self):
-        if not self.get_config_value('LINE_FOLLOWER_COLLISION_AVOID'):
+        if not self.get_config_value('COLLISION_AVOID'):
             return False
 
         min_distance = self.get_config_value('OBSTACLE_MIN_DISTANCE')
@@ -138,7 +138,7 @@ class ObstacleAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         ControllerConfigWrapper.__init__(self, controller)
 
     def take_control(self):
-        return self.get_config_value('LINE_FOLLOWER_OBSTACLE_AVOID') \
+        return self.get_config_value('OBSTACLE_AVOID') \
                and DISTANCE_SENSOR.value() < self.get_config_value('OBSTACLE_MIN_DISTANCE')
 
     def on_take_control(self):
@@ -234,8 +234,8 @@ class ObstacleDetectionBehaviour(MultiBehaviour, ControllerConfigWrapper):
 
     def take_control(self) -> bool:
         return HAS_DISTANCE_SENSOR and HAS_SCANNER_MOTOR \
-               and (self.get_config_value('LINE_FOLLOWER_OBSTACLE_AVOID')
-                    or self.get_config_value('LINE_FOLLOWER_COLLISION_AVOID')) \
+               and (self.get_config_value('OBSTACLE_AVOID')
+                    or self.get_config_value('COLLISION_AVOID')) \
                and DISTANCE_SENSOR.value() < self.get_config_value('OBSTACLE_MIN_DISTANCE')
 
 
@@ -296,7 +296,8 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         read_percent = 100 * (read_val - min_reflect) / (max_reflect - min_reflect)
         course = min(100, max(-100, self.steer_regulator.regulate(read_percent) * line_side)) / 2
 
-        if self.get_config_value('SHARP_TURN_DETECT') and self.steer_regulator.last_derivative > 25:  # TODO: test
+        if self.get_config_value('SHARP_TURN_DETECT') and self.steer_regulator.last_derivative > 25:
+            # TODO: test add to config
             side = self.get_config_value('SHARP_TURN_ROTATE_SIDE')
             target_reflect = self.get_config_value('TARGET_REFLECT')
             course = 50 * side
@@ -315,9 +316,10 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
             self._last_time = time.time()
             return
 
-        if self.get_config_value('STOP_ON_LINE_END') and self.steer_regulator.last_derivative < 25:  # TODO: test
+        if self.get_config_value('STOP_ON_LINE_END') and self.steer_regulator.last_derivative < -25:
+            # TODO: test add to config
             self.controller.force_loose_control()
-            self.controller.stop()
+            self.controller.request_exit()
 
         power_left = target_power + course
         power_right = target_power - course
@@ -343,12 +345,11 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         elif sleep_time < -target_cycle_time * 5:
             log.warn('Regulation is getting late. It\'s late %s seconds. Use bigger cycle time.' % sleep_time)
         self._last_time += target_cycle_time
-        pass
 
 
 class LineFollowController(SimpleRobotProgramController, BehaviourController):
     def __init__(self, robot_program, config=None):
-        SimpleRobotProgramController.__init__(self, robot_program, config)
+        SimpleRobotProgramController.__init__(self, robot_program, config=config)
         BehaviourController.__init__(self, robot_program, [
             ObstacleDetectionBehaviour(self),
             LineFollowBehaviour(self)
@@ -396,8 +397,9 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
         reset_hardware()
 
     def stop_loop(self):
-        return super().stop_loop() and (not isinstance(self.last_behaviour, LineFollowBehaviour)
-                                        or self.last_behaviour.last_power < 5)
+        last_behaviour = self.last_behaviour
+        return super().stop_loop() and (not isinstance(last_behaviour, LineFollowBehaviour)
+                                        or last_behaviour.last_power < 5)
 
     def on_config_change(self):
         super().on_config_change()
@@ -420,7 +422,7 @@ class LineFollowRobotProgram(RobotProgram):
     def execute(self, config=None) -> RobotProgramController:
         if not HAS_WHEELS or not HAS_COLOR_SENSOR:
             raise Exception('LineFollower requires wheels and color sensor at last.')
-        return LineFollowController(config)
+        return LineFollowController(self, config)
 
 
 def run():
@@ -431,7 +433,7 @@ def run():
     except KeyboardInterrupt:
         pass
 
-    controller.stop()
+    controller.request_exit()
     controller.wait_to_exit()
 
 
