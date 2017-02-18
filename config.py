@@ -1,7 +1,7 @@
 import logging
 import os
-
 import sys
+
 from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C
 from odict.pyodict import odict
 
@@ -33,11 +33,12 @@ log = logging.getLogger(__name__)
 
 # Other
 ENABLE_SOUNDS = True
+DATA_DIR = os.curdir + os.sep + 'data'
 
 # Server
 SERVER_PORT = 8000
-SERVER_HTML_DIR = os.curdir + os.sep + 'html'
-SERVER_DATA_DIR = os.curdir + os.sep + 'data'
+SERVER_HTML_DIR = DATA_DIR + os.sep + 'html'
+SERVER_DATA_DIR = DATA_DIR + os.sep + 'html_data'
 
 # Robot
 ROBOT_MOTOR_WHEELS_LEFT_PORT = OUTPUT_B
