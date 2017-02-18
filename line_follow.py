@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import time
+
 import config as _config
 from behaviour import *
 from hardware import *
