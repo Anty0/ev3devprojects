@@ -3,19 +3,17 @@
 import json
 import logging
 import os
+import signal
 import threading
-import traceback
 from http.server import HTTPServer
 
-import signal
-import sys
 from odict.pyodict import odict
 
 import config
 import hardware
-from auto_drive import AutoDriveRobotProgram
-from line_follow import LineFollowRobotProgram
-from web_server import FilesWebHandler
+from programs.auto_drive import AutoDriveRobotProgram
+from programs.line_follow import LineFollowRobotProgram
+from utils.web_server import FilesWebHandler
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +21,7 @@ robot_programs = odict()
 running_controllers = {}
 
 
-class ProgramsPageWebHandler(FilesWebHandler):
+class MainWebHandler(FilesWebHandler):
     def _get_html_dir(self):
         return config.SERVER_HTML_DIR
 
@@ -214,7 +212,7 @@ add_program(AutoDriveRobotProgram())
 
 
 def run():
-    server = HTTPServer(('', config.SERVER_PORT), ProgramsPageWebHandler)
+    server = HTTPServer(('', config.SERVER_PORT), MainWebHandler)
 
     def start_server():
         try:

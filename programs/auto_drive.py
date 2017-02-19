@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
+import math
 import threading
 
-import math
-
-import config as _config
-from hardware import *
-from robot_program import *
+from .. import config as _config
+from ..hardware import *
+from ..utils.robot_program import *
 
 
 class AutoDriveController(SimpleRobotProgramController):

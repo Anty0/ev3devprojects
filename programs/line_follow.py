@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-import time
-
 import config as _config
-from behaviour import *
-from hardware import *
-from regulator import *
-from robot_program import *
+from ..hardware import *
+from ..utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
+from ..utils.regulator import *
+from ..utils.robot_program import *
 
 
 class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
@@ -299,7 +297,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         course = min(100, max(-100, self.steer_regulator.regulate(read_percent) * line_side)) / 2
 
         if self.get_config_value('SHARP_TURN_DETECT') and self.steer_regulator.last_derivative > 25:
-            # TODO: test add to config
+            # TODO: test and add to config
             side = self.get_config_value('SHARP_TURN_ROTATE_SIDE')
             target_reflect = self.get_config_value('TARGET_REFLECT')
             course = 50 * side
@@ -319,7 +317,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
             return
 
         if self.get_config_value('STOP_ON_LINE_END') and self.steer_regulator.last_derivative < -25:
-            # TODO: test add to config
+            # TODO: test and add to config
             self.controller.force_loose_control()
             self.controller.request_exit()
 

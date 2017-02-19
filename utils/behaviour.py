@@ -1,8 +1,7 @@
 import threading
-
 import time
 
-from robot_program import RobotProgramController
+from .robot_program import RobotProgramController
 
 
 class Behaviour:
