@@ -12,7 +12,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         Behaviour.__init__(self)
         ControllerConfigWrapper.__init__(self, controller)
 
-        self.power_regulator = Regulator(const_p=1, const_i=0, const_d=3,  # TODO: to config
+        self.power_regulator = PercentRegulator(const_p=1, const_i=0, const_d=3,  # TODO: to config
                                          getter_target=self._get_target_distance)
 
     def _get_target_distance(self):
@@ -42,8 +42,8 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
             if sleep_time > 0:
                 time.sleep(sleep_time)
             elif sleep_time < -target_cycle_time * 5:
-                log.warn('Obstacle avoid detection is getting late. It\'s late %s seconds.'
-                         ' Use bigger cycle time.' % sleep_time)
+                log.warning('Obstacle avoid detection is getting late. It\'s late %s seconds.'
+                            ' Use bigger cycle time.' % sleep_time)
             last_time += target_cycle_time
             pass
 
@@ -126,8 +126,8 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
             if sleep_time > 0:
                 time.sleep(sleep_time)
             elif sleep_time < -target_cycle_time * 5:
-                log.warn('Obstacle avoid detection is getting late. It\'s late %s seconds.'
-                         ' Use bigger cycle time.' % sleep_time)
+                log.warning('Obstacle avoid detection is getting late. It\'s late %s seconds.'
+                            ' Use bigger cycle time.' % sleep_time)
             last_time += target_cycle_time
         pass
 
@@ -246,13 +246,13 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
 
         self._last_time = time.time()
         self._last_power = 0
-        self.power_regulator = Regulator(const_p=0.5, const_i=0, const_d=0.5,
-                                         getter_target=self._get_target_power)
+        self.power_regulator = PercentRegulator(const_p=0.5, const_i=0, const_d=0.5,
+                                                getter_target=self._get_target_power)
 
-        self.steer_regulator = Regulator(getter_p=lambda: self.get_config_value('REG_STEER_P'),
-                                         getter_i=lambda: self.get_config_value('REG_STEER_I'),
-                                         getter_d=lambda: self.get_config_value('REG_STEER_D'),
-                                         getter_target=lambda: self.get_config_value('TARGET_REFLECT'))
+        self.steer_regulator = PercentRegulator(getter_p=lambda: self.get_config_value('REG_STEER_P'),
+                                                getter_i=lambda: self.get_config_value('REG_STEER_I'),
+                                                getter_d=lambda: self.get_config_value('REG_STEER_D'),
+                                                getter_target=lambda: self.get_config_value('TARGET_REFLECT'))
 
     def reset_regulation(self):
         self.power_regulator.reset()
@@ -343,7 +343,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         if sleep_time > 0:
             time.sleep(sleep_time)
         elif sleep_time < -target_cycle_time * 5:
-            log.warn('Regulation is getting late. It\'s late %s seconds. Use bigger cycle time.' % sleep_time)
+            log.warning('Regulation is getting late. It\'s late %s seconds. Use bigger cycle time.' % sleep_time)
         self._last_time += target_cycle_time
 
 
