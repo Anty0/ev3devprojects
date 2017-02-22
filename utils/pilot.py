@@ -56,6 +56,9 @@ class MotorAction(Action):
     def traveled_tacho_counts(self):
         return self._motor.position - self._start_position
 
+    def traveled_units(self):
+        return self.traveled_tacho_counts() / self.wheel.wheel_unit_ratio / self.wheel.wheel_total_ratio
+
     def on_start(self):
         self._speed_regulator.reset()
         # self._error_regulator.reset()
@@ -82,6 +85,16 @@ class DriveCoordinator(CycleThreadCoordinator):
         self._angle = angle
         self._distance_unit = distance_unit
 
+        if len(motor_actions) == 0:
+            self.stop()
+        else:
+            self.min_action = self.max_action = motor_actions[0].wheel
+            for motor_action in motor_actions:
+                if motor_action.wheel.offset < self.min_action.wheel.offset:
+                    self.min_action = motor_action
+                if motor_action.wheel.offset > self.max_action.wheel.offset:
+                    self.max_action = motor_action
+
     def _is_stop_loop(self):
         if CycleThreadCoordinator._is_stop_loop(self):
             return True
@@ -95,21 +108,29 @@ class DriveCoordinator(CycleThreadCoordinator):
 
             distance_unit = 0
             for action in self._actions:
-                distance_unit += action.traveled_tacho_counts() \
-                                 / action.wheel.wheel_unit_ratio \
-                                 / action.wheel.wheel_total_ratio
+                distance_unit += action.traveled_units()
             distance_unit /= len(self._actions)
 
             if abs(distance_unit) > abs(self._distance_unit):
                 return True
 
-        if self._angle is not None:
+        if self._angle is not None and self.min_action.wheel.offset != self.max_action.wheel.offset:
             if self._distance_unit == 0:
                 return True
 
-            angle = 0
+            min_traveled = self.min_action.traveled_units()
+            max_traveled = self.max_action.traveled_units()
+            ratio = min_traveled / max_traveled
+            radius = (self.min_action.wheel.offset - ratio * self.max_action.wheel.offset) / (ratio - 1)
+            min_radius = radius + self.min_action.wheel.offset
+            max_radius = radius + self.max_action.wheel.offset
 
-            # TODO:implement
+            if abs(min_radius) > abs(max_radius):
+                circuit = min_radius * math.pi
+                angle = circuit / min_traveled
+            else:
+                circuit = max_radius * math.pi
+                angle = circuit / max_traveled
 
             if abs(angle) > abs(self._angle):
                 return True
