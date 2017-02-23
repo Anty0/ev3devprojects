@@ -19,13 +19,14 @@ class LogSteam:
         sys.stdout.write(msg)
         pass
 
+
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
 
 # Enable logging output
 ch = logging.StreamHandler(LogSteam())
 ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 root.addHandler(ch)
 
@@ -35,24 +36,36 @@ log = logging.getLogger(__name__)
 ENABLE_SOUNDS = True
 DATA_DIR = os.curdir + os.sep + 'data'
 
+
 # Server
 SERVER_PORT = 8000
 SERVER_HTML_DIR = DATA_DIR + os.sep + 'html'
 SERVER_DATA_DIR = DATA_DIR + os.sep + 'html_data'
 
+
 # Robot
-ROBOT_MOTOR_WHEELS_LEFT_PORT = OUTPUT_B
-ROBOT_MOTOR_WHEELS_RIGHT_PORT = OUTPUT_C
-ROBOT_MOTOR_WHEELS_DIAMETER = 4.3
-ROBOT_MOTOR_WHEELS_WIDTH = 2.1
-ROBOT_MOTOR_WHEELS_OFFSET = 13  # TODO: measure
-ROBOT_MOTOR_WHEELS_GEAR_RATIO = 1
+ROBOT_WIDTH = 13
+ROBOT_LENGTH = 0
+ROBOT_HEIGHT = 0
+ROBOT_WEIGHT = 0
+
+ROBOT_MOTOR_WHEEL_LEFT_PORT = OUTPUT_B
+ROBOT_MOTOR_WHEEL_LEFT_DIAMETER = 4.3
+ROBOT_MOTOR_WHEEL_LEFT_WIDTH = 2.1
+ROBOT_MOTOR_WHEEL_LEFT_OFFSET = -6.5
+ROBOT_MOTOR_WHEEL_LEFT_GEAR_RATIO = 1
+
+ROBOT_MOTOR_WHEEL_RIGHT_PORT = OUTPUT_C
+ROBOT_MOTOR_WHEEL_RIGHT_DIAMETER = 4.3
+ROBOT_MOTOR_WHEEL_RIGHT_WIDTH = 2.1
+ROBOT_MOTOR_WHEEL_RIGHT_OFFSET = 6.5
+ROBOT_MOTOR_WHEEL_RIGHT_GEAR_RATIO = 1
 
 ROBOT_MOTOR_SCANNER_PORT = OUTPUT_A
 ROBOT_MOTOR_SCANNER_GEAR_RATIO = 20 / 12
 
 # Line follower
-LINE_FOLLOWER_TARGET_CYCLE_TIME = 0.01
+LINE_FOLLOWER_TARGET_CYCLE_TIME = 0.02
 LINE_FOLLOWER_TARGET_POWER = 100
 LINE_FOLLOWER_REGULATE_TARGET_POWER_CHANGE = True
 LINE_FOLLOWER_TARGET_REFLECT = 55
@@ -64,10 +77,13 @@ LINE_FOLLOWER_LINE_SIDE = -1  # -1 == left; 1 == right
 LINE_FOLLOWER_OBSTACLE_AVOID = False
 LINE_FOLLOWER_OBSTACLE_AVOID_SIDE = -1  # -1 == left; 1 == right
 LINE_FOLLOWER_OBSTACLE_MIN_DISTANCE = 50
+LINE_FOLLOWER_OBSTACLE_WIDTH = 0  # 0 = automatic detection
+LINE_FOLLOWER_OBSTACLE_HEIGHT = 0  # 0 = automatic detection
 LINE_FOLLOWER_COLLISION_AVOID = False
 LINE_FOLLOWER_SHARP_TURN_DETECT = False
 LINE_FOLLOWER_SHARP_TURN_ROTATE_SIDE = -1  # -1 == left; 1 == right
 LINE_FOLLOWER_STOP_ON_LINE_END = False
+
 config_values = odict()
 config_values['AUTO_LEARN_CONSTANTS'] = {
     'display_name': 'Try auto-learn constants (beta)',
@@ -149,6 +165,16 @@ config_values['OBSTACLE_MIN_DISTANCE'] = {
     'type': 'int',
     'default_value': LINE_FOLLOWER_OBSTACLE_MIN_DISTANCE
 }
+config_values['OBSTACLE_WIDTH'] = {
+    'display_name': 'Width of obstacle',
+    'type': 'float',
+    'default_value': LINE_FOLLOWER_OBSTACLE_WIDTH
+}
+config_values['OBSTACLE_HEIGHT'] = {
+    'display_name': 'Height of obstacle',
+    'type': 'float',
+    'default_value': LINE_FOLLOWER_OBSTACLE_HEIGHT
+}
 config_values['COLLISION_AVOID'] = {
     'display_name': 'Robot collision avoid',
     'type': 'bool',
@@ -175,6 +201,7 @@ LINE_FOLLOWER_CONFIG_VALUES = config_values
 AUTO_DRIVER_MOTOR_SCANNER_SIDE_DEGREES = 100
 AUTO_DRIVER_MOTOR_POWER_MIN = 20
 AUTO_DRIVER_MOTOR_SPEED = 40
+
 config_values = odict()
 config_values['MOTOR_SCANNER_SIDE_DEGREES'] = {
     'display_name': 'One left/right rotation degrees',

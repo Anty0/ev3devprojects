@@ -19,8 +19,10 @@ class Action:
 
 
 class Coordinator:
-    def __init__(self, actions):
+    def __init__(self, actions, diff_limit=None):
         self._actions = actions
+        self._diff_limit = diff_limit
+        self._pause_time = None
         self._start_time = time.time()
 
     def on_start(self):
@@ -48,10 +50,21 @@ class Coordinator:
                 count += 1
             target.append(total / count if count != 0 else None)
 
-        elapsed_time = time.time() - self._start_time
+        loop_time = time.time()
+        if self._pause_time is not None:
+            self._start_time += loop_time - self._pause_time
+            self._pause_time = None
+
+        elapsed_time = loop_time - self._start_time
+        pause = False
         for i in range(len(self._actions)):
             diff = target[i] - actual[i] if target[i] is not None and actual[i] is not None else 0
+            if self._diff_limit is not None and abs(diff) > self._diff_limit:
+                pause = True
             self._actions[i].handle_loop(elapsed_time, diff)
+
+        if pause:
+            self._pause_time = loop_time
 
     def on_stop(self):
         for action in self._actions:
@@ -59,9 +72,9 @@ class Coordinator:
 
 
 class ThreadCoordinator(Thread, Coordinator):
-    def __init__(self, actions):
+    def __init__(self, actions, diff_limit=None):
         Thread.__init__(self)
-        Coordinator.__init__(self, actions)
+        Coordinator.__init__(self, actions, diff_limit=diff_limit)
         self._request_stop = False
 
     def run(self):
@@ -78,8 +91,8 @@ class ThreadCoordinator(Thread, Coordinator):
 
 
 class CycleThreadCoordinator(ThreadCoordinator):
-    def __init__(self, actions, cycle_time=0.01):
-        ThreadCoordinator.__init__(self, actions)
+    def __init__(self, actions, diff_limit=None, cycle_time=0.01):
+        ThreadCoordinator.__init__(self, actions, diff_limit=diff_limit)
         self._cycle_time = cycle_time
         self._last_time = self._start_time
 

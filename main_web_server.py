@@ -3,22 +3,20 @@
 import json
 import logging
 import os
-import signal
-import threading
-from http.server import HTTPServer
 
 from odict.pyodict import odict
 
 import config
-import hardware
-from programs.auto_drive import AutoDriveRobotProgram
-from programs.line_follow import LineFollowRobotProgram
 from utils.web_server import FilesWebHandler
 
 log = logging.getLogger(__name__)
 
 robot_programs = odict()
 running_controllers = {}
+
+
+def add_program(robot_program):
+    robot_programs[robot_program.name] = robot_program
 
 
 class MainWebHandler(FilesWebHandler):
@@ -201,39 +199,3 @@ class MainWebHandler(FilesWebHandler):
             }).encode())
 
         return True
-
-
-def add_program(robot_program):
-    robot_programs[robot_program.name] = robot_program
-
-
-add_program(LineFollowRobotProgram())
-add_program(AutoDriveRobotProgram())
-
-
-def run():
-    server = HTTPServer(('', config.SERVER_PORT), MainWebHandler)
-
-    def start_server():
-        try:
-            server.serve_forever()
-        except (KeyboardInterrupt, Exception) as e:
-            log.exception(e)
-            if server:
-                server.shutdown()
-                server.server_close()
-        finally:
-            hardware.reset_hardware()
-
-    threading.Thread(target=start_server).start()
-    log.info("Started HTTP server on port %d" % config.SERVER_PORT)
-
-    def handle_exit(signum, frame):
-        server.shutdown()
-
-    signal.signal(signal.SIGINT, handle_exit)
-    signal.signal(signal.SIGTERM, handle_exit)
-
-
-if __name__ == '__main__':
-    run()

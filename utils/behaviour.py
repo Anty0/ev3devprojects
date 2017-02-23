@@ -11,7 +11,7 @@ class Behaviour:
     def on_loose_control(self):
         pass
 
-    def take_control(self) -> bool:
+    def should_take_control(self) -> bool:
         pass
 
     def handle_loop(self):
@@ -31,7 +31,7 @@ class Behaviours:
 
     def _select_new_behaviour(self) -> Behaviour or None:
         for behaviour in self.behaviours:
-            if behaviour.take_control():
+            if behaviour.should_take_control():
                 return behaviour
         return None
 
@@ -60,7 +60,7 @@ class MultiBehaviour(Behaviours):
 
     def take_control(self) -> bool:
         for behaviour in self.behaviours:
-            if not behaviour.take_control():
+            if not behaviour.should_take_control():
                 return False
             return True
 
