@@ -1,3 +1,6 @@
+from utils import utils
+
+
 class RegulatorBase:
     def __init__(self, const_p=None, const_i=None, const_d=None, const_target=None,
                  getter_p=None, getter_i=None, getter_d=None, getter_target=None):
@@ -39,14 +42,36 @@ class RegulatorBase:
         pass
 
 
-class PercentRegulator(RegulatorBase):
+class ValueRegulator(RegulatorBase):
     def __init__(self, const_p=None, const_i=None, const_d=None, const_target=None,
                  getter_p=None, getter_i=None, getter_d=None, getter_target=None):
         RegulatorBase.__init__(self, const_p, const_i, const_d, const_target,
                                getter_p, getter_i, getter_d, getter_target)
 
     def regulate(self, input_val):
-        input_val = min(100, max(-100, input_val))
+        target = self._get_target()
+        error = target - input_val
+        return self.regulate_error(error)
+
+    def regulate_error(self, error):
+        integral = float(0.5) * self.last_integral + error
+        self.last_integral = integral
+
+        derivative = error - self.last_error
+        self.last_error = error
+        self.last_derivative = derivative
+
+        return self._get_p() * error + self._get_i() * integral + self._get_d() * derivative
+
+
+class PercentRegulator(ValueRegulator):
+    def __init__(self, const_p=None, const_i=None, const_d=None, const_target=None,
+                 getter_p=None, getter_i=None, getter_d=None, getter_target=None):
+        ValueRegulator.__init__(self, const_p, const_i, const_d, const_target,
+                                getter_p, getter_i, getter_d, getter_target)
+
+    def regulate(self, input_val):
+        input_val = utils.crop_r(input_val)
         target = self._get_target()
         max_positive_error = abs(100 - target) * 0.6
         max_negative_error = abs(-target) * 0.6
@@ -55,33 +80,4 @@ class PercentRegulator(RegulatorBase):
         max_error = max_negative_error if error < 0 else max_positive_error
         error *= 100 / max_error
 
-        integral = float(0.5) * self.last_integral + error
-        self.last_integral = integral
-
-        derivative = error - self.last_error
-        self.last_error = error
-        self.last_derivative = derivative
-
-        return self._get_p() * error + self._get_i() * integral + self._get_d() * derivative
-
-
-class ValueRegulator(RegulatorBase):  # TODO: add some support methods and use it in both implementations of regulator
-    def __init__(self, const_p=None, const_i=None, const_d=None, const_target=None,
-                 getter_p=None, getter_i=None, getter_d=None, getter_target=None):
-        RegulatorBase.__init__(self, const_p, const_i, const_d, const_target,
-                               getter_p, getter_i, getter_d, getter_target)
-
-    def regulate(self, input_val):
-        input_val = input_val
-        target = self._get_target()
-
-        error = target - input_val
-
-        integral = float(0.5) * self.last_integral + error
-        self.last_integral = integral
-
-        derivative = error - self.last_error
-        self.last_error = error
-        self.last_derivative = derivative
-
-        return self._get_p() * error + self._get_i() * integral + self._get_d() * derivative
+        return self.regulate_error(error)
