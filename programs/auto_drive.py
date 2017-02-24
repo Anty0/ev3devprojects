@@ -3,6 +3,7 @@
 import math
 import threading
 
+from utils import utils
 from .. import config as _config
 from ..hardware import *
 from ..utils.robot_program import *
@@ -17,18 +18,15 @@ class AutoDriveController(SimpleRobotProgramController):
         self.thread.start()
 
     def _run(self):
-        scan_results = [MAX_DISTANCE, MAX_DISTANCE, MAX_DISTANCE]
+        scan_results = [100, 100, 100]
         scan_integrals = [0, 0, 0]
 
-        scan_result_tmp = [MAX_DISTANCE, 1]
+        scan_result_tmp = [100, 1]
 
-        def rotate_scanner(target):
-            SCANNER_MOTOR.run_to_abs_pos(speed_sp=SCANNER_MOTOR.max_speed / 5,
-                                         position_sp=target * _config.ROBOT_MOTOR_SCANNER_GEAR_RATIO)
+        side_degrees = self.get_config_value('MOTOR_SCANNER_SIDE_DEGREES')
 
-        def get_actual_scanner_pos(max_side_degrees):
-            scanner_position = SCANNER_MOTOR.position
-            straight_degrees = max_side_degrees / 3
+        def scanner_pos_to_side(scanner_position):
+            straight_degrees = side_degrees / 3
             if scanner_position < -straight_degrees:
                 return 0
             if scanner_position > straight_degrees:
@@ -39,7 +37,7 @@ class AutoDriveController(SimpleRobotProgramController):
             if scanner_pos != scan_result_tmp[1]:
                 scan_results[scan_result_tmp[1]] = scan_result_tmp[0]
                 scan_integrals[scan_result_tmp[1]] = scan_result_tmp[0] + scan_integrals[scan_result_tmp[1]] / 2
-                scan_result_tmp[0] = MAX_DISTANCE
+                scan_result_tmp[0] = 100
                 scan_result_tmp[1] = scanner_pos
                 update_drive()
 
@@ -53,11 +51,12 @@ class AutoDriveController(SimpleRobotProgramController):
             results_left_ratio = (scan_results[2] / scan_results[0]) if scan_results[0] != 0 else math.inf
             results_right_ratio = (scan_results[0] / scan_results[2]) if scan_results[2] != 0 else math.inf
 
-            speed_mul = (min(scan_results[0], scan_results[1], scan_results[2]) * 4 - MAX_DISTANCE * 0.7) / MAX_DISTANCE
+            min_scan_result = min(scan_results[0], scan_results[1], scan_results[2])
+            speed_mul = (min_scan_result * 4 - 100 * 0.7) / 100
             left_speed = results_left_ratio * speed_mul * 100
             right_speed = results_right_ratio * speed_mul * 100
 
-            slow_speed_mul = (MAX_DISTANCE * 0.7 + scan_results[1] * 0.3) / MAX_DISTANCE
+            slow_speed_mul = (100 * 0.7 + scan_results[1] * 0.3) / 100
             if scan_results[2] > scan_results[0]:
                 right_speed *= slow_speed_mul
             else:
@@ -67,49 +66,44 @@ class AutoDriveController(SimpleRobotProgramController):
                 left_speed, right_speed = right_speed, left_speed
 
             motor_speed = self.get_config_value('MOTOR_SPEED') / 100
-            left_speed = min(max(left_speed, -100), 100) * motor_speed
-            right_speed = min(max(right_speed, -100), 100) * motor_speed
+            left_speed = utils.crop_r(left_speed) * motor_speed
+            right_speed = utils.crop_r(right_speed) * motor_speed
 
-            min_motor_power = self.get_config_value('MOTOR_POWER_MIN')
-            if abs(left_speed) < min_motor_power and abs(right_speed) < min_motor_power:
-                if abs(left_speed) < abs(right_speed):
-                    mul = min_motor_power / right_speed
-                    left_speed *= mul
-                    right_speed *= mul
-                else:
-                    if right_speed == 0:
-                        if left_speed == 0:
-                            left_speed = -min_motor_power
-                            right_speed = -min_motor_power
-                        else:
-                            left_speed *= min_motor_power / left_speed
-                    else:
-                        mul = min_motor_power / left_speed
-                        left_speed *= mul
-                        right_speed *= mul
+            # min_motor_power = self.get_config_value('MOTOR_POWER_MIN')
+            # if abs(left_speed) < min_motor_power and abs(right_speed) < min_motor_power:
+            #     if abs(left_speed) < abs(right_speed):
+            #         mul = min_motor_power / right_speed
+            #         left_speed *= mul
+            #         right_speed *= mul
+            #     else:
+            #         if right_speed == 0:
+            #             if left_speed == 0:
+            #                 left_speed = -min_motor_power
+            #                 right_speed = -min_motor_power
+            #             else:
+            #                 left_speed *= min_motor_power / left_speed
+            #         else:
+            #             mul = min_motor_power / left_speed
+            #             left_speed *= mul
+            #             right_speed *= mul
 
-            LEFT_MOTOR.duty_cycle_sp = int(left_speed)
-            RIGHT_MOTOR.duty_cycle_sp = int(right_speed)
+            PILOT.update_duty_cycle_raw([left_speed, right_speed])  # TODO: rework to course
 
-        side_degrees = self.get_config_value('MOTOR_SCANNER_SIDE_DEGREES')
-        rotate_scanner(side_degrees)
-        while not self.stop and 'running' in SCANNER_MOTOR.state:
-            pass
+        def value_handler(val, angle):
+            write_tmp_result(val, scanner_pos_to_side(angle))
 
-        rotate_scanner(-side_degrees)
-        while not self.stop and 'running' in SCANNER_MOTOR.state:
-            write_tmp_result(DISTANCE_SENSOR.value(), get_actual_scanner_pos(side_degrees))
+        SCANNER.rotate_scanner_to_pos(side_degrees)
+        SCANNER.wait_to_scanner_stop()
+
+        SCANNER.value_scan_continuous(-side_degrees, value_handler)
         next_positive = True
 
-        LEFT_MOTOR.run_direct()
-        RIGHT_MOTOR.run_direct()
+        PILOT.run_direct()
         while not self.stop:
             side_degrees = self.get_config_value('MOTOR_SCANNER_SIDE_DEGREES')
             scanner_target = side_degrees if next_positive else -side_degrees
             next_positive = not next_positive
-            rotate_scanner(scanner_target)
-            while 'running' in SCANNER_MOTOR.state:
-                write_tmp_result(DISTANCE_SENSOR.value(), get_actual_scanner_pos(side_degrees))
+            SCANNER.value_scan_continuous(scanner_target, value_handler)
 
         reset_hardware()
 
@@ -132,7 +126,7 @@ class AutoDriveRobotProgram(RobotProgram):
         super().__init__('AutoDrive', _config.AUTO_DRIVER_CONFIG_VALUES)
 
     def execute(self, config=None) -> RobotProgramController:
-        if not HAS_WHEELS or not HAS_SCANNER_MOTOR or not HAS_DISTANCE_SENSOR:
+        if not PILOT.is_connected() or not SCANNER.is_connected() or not SCANNER.has_motor():
             raise Exception('AutoDrive requires wheels and rotating scanner.')
         return AutoDriveController(self, config)
 

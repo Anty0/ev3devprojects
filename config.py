@@ -199,7 +199,7 @@ LINE_FOLLOWER_CONFIG_VALUES = config_values
 
 # Auto driver
 AUTO_DRIVER_MOTOR_SCANNER_SIDE_DEGREES = 100
-AUTO_DRIVER_MOTOR_POWER_MIN = 20
+# AUTO_DRIVER_MOTOR_POWER_MIN = 20
 AUTO_DRIVER_MOTOR_SPEED = 40
 
 config_values = odict()
@@ -208,11 +208,11 @@ config_values['MOTOR_SCANNER_SIDE_DEGREES'] = {
     'type': 'int',
     'default_value': AUTO_DRIVER_MOTOR_SCANNER_SIDE_DEGREES
 }
-config_values['MOTOR_POWER_MIN'] = {
-    'display_name': 'Min motor power',
-    'type': 'int',
-    'default_value': AUTO_DRIVER_MOTOR_POWER_MIN
-}
+# config_values['MOTOR_POWER_MIN'] = {
+#     'display_name': 'Min motor power',
+#     'type': 'int',
+#     'default_value': AUTO_DRIVER_MOTOR_POWER_MIN
+# }
 config_values['MOTOR_SPEED'] = {
     'display_name': 'Target motor power',
     'type': 'int',

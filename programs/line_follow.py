@@ -62,7 +62,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         while not self.controller.stop:
             distance_val = SCANNER.value_scan(0)
             power = self._power_regulator.regulate(-distance_val)
-            PILOT.update_duty_cycle_sp(0, utils.crop_m(power, max_out=0))
+            PILOT.update_duty_cycle(0, utils.crop_m(power, max_out=0))
 
             if distance_val > self._get_target_distance():
                 PILOT.stop()
@@ -262,7 +262,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
 
         side = self.get_config_value('SHARP_TURN_ROTATE_SIDE')
         target_reflect = self.get_config_value('TARGET_REFLECT')
-        PILOT.update_duty_cycle_sp(50 * side, target_power)
+        PILOT.update_duty_cycle(50 * side, target_power)
 
         while 100 * (COLOR_SENSOR.value() - min_reflect) / (max_reflect - min_reflect) <= target_reflect:
             time.sleep(target_cycle_time)
@@ -300,7 +300,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
                 or self._test_stop_on_line_end():
             return
 
-        PILOT.update_duty_cycle_sp(course, target_power)
+        PILOT.update_duty_cycle(course, target_power)
 
         self._last_time = utils.wait_to_cycle_time(self._last_time, target_cycle_time)
 

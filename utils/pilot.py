@@ -481,10 +481,13 @@ class Pilot:
         for i in range(len(self._wheels)):
             self._wheels[i].motor.run_direct(duty_cycle_sp=duty_cycles[i])
 
-    def update_duty_cycle_sp(self, course_percent: float, max_duty_cycle: int = 100):
-        duty_cycles = self._course_percent_to_speeds(course_percent, max_duty_cycle)
+    def update_duty_cycle_raw(self, duty_cycles):
+        self._validate_len(duty_cycles)
         for i in range(len(self._wheels)):
             self._wheels[i].motor.duty_cycle_sp = duty_cycles[i]
+
+    def update_duty_cycle(self, course_percent: float, max_duty_cycle: int = 100):
+        self.update_duty_cycle_raw(self._course_percent_to_speeds(course_percent, max_duty_cycle))
 
     def set_stop_action(self, stop_action: str):
         for wheel in self._wheels:

@@ -26,7 +26,7 @@ try:
     while True:
         distance_val = SCANNER.value_scan(0)
         power = utils.crop_m(power_regulator.regulate(-distance_val), min_out=-30, max_out=0)
-        PILOT.update_duty_cycle_sp(0, power)
+        PILOT.update_duty_cycle(0, power)
 
         last_time = utils.wait_to_cycle_time(last_time, 0.05)
 except KeyboardInterrupt:
