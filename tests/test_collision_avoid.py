@@ -18,15 +18,15 @@ PILOT = Pilot([
 
 SCANNER = Scanner(ScannerPropulsion(MediumMotor(OUTPUT_A), 20 / 12))
 
-power_regulator = PercentRegulator(const_p=1, const_i=0, const_d=3, const_target=40)
+power_regulator = PercentRegulator(const_p=1, const_i=3, const_d=2, const_target=-40)
 
 try:
     PILOT.run_direct()
     last_time = time.time()
     while True:
         distance_val = SCANNER.value_scan(0)
-        power = power_regulator.regulate(distance_val)
-        PILOT.update_duty_cycle_sp(0, power if power < 0 else 0)
+        power = utils.crop_m(power_regulator.regulate(-distance_val), min_out=-30, max_out=0)
+        PILOT.update_duty_cycle_sp(0, power)
 
         last_time = utils.wait_to_cycle_time(last_time, 0.05)
 except KeyboardInterrupt:

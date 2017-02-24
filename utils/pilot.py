@@ -19,7 +19,7 @@ class Wheel:
         self.offset = offset
 
         self.gear_ratio = gear_ratio
-        self.motor_tacho_ratio = motor.count_per_rot / 360
+        self.motor_tacho_ratio = motor.count_per_rot / 360 if motor.connected else 1
         self.total_ratio = self.gear_ratio * self.motor_tacho_ratio
         self.unit_ratio = 360 / (math.pi * self.diameter)
 
@@ -28,9 +28,9 @@ _REG_SPEED_P = 1
 _REG_SPEED_I = 0.1
 _REG_SPEED_D = 2
 
-_REG_ERROR_P = 0.3
-_REG_ERROR_I = 0.1
-_REG_ERROR_D = 0.4
+# _REG_ERROR_P = 0.3
+# _REG_ERROR_I = 0.1
+# _REG_ERROR_D = 0.4
 
 _CYCLE_TIME = 0.05
 
@@ -44,20 +44,25 @@ class MotorAction(Action):
 
         self._elapsed_time = time.time()
         self._start_position = self._motor.position
-        self._speed_regulator = ValueRegulator(const_p=_REG_SPEED_P, const_i=_REG_SPEED_I, const_d=_REG_ERROR_D,
-                                               getter_target=lambda: self._speed * (time.time() - self._elapsed_time)
-                                                                     + self._start_position)
+        self._speed_regulator = ValueRegulator(const_p=_REG_SPEED_P, const_i=_REG_SPEED_I, const_d=_REG_SPEED_D,
+                                               getter_target=self.target_tacho_counts)
         # self._error_regulator = ValueRegulator(const_p=_REG_ERROR_P, const_i=_REG_ERROR_I,
-        #                                        const_d=_REG_ERROR_I, const_target=0)
+        #                                        const_d=_REG_ERROR_D, const_target=0)
 
     def actual_progress(self):
-        return (self._motor.position - self._start_position) / self._speed if self._speed != 0 else None
+        return (self.traveled_tacho_counts() / self._speed) if self._speed != 0 else None
 
     def traveled_tacho_counts(self):
         return self._motor.position - self._start_position
 
     def traveled_units(self):
-        return self.traveled_tacho_counts() / self.wheel.wheel_unit_ratio / self.wheel.wheel_total_ratio
+        return self.traveled_tacho_counts() / self.wheel.unit_ratio / self.wheel.total_ratio
+
+    def target_tacho_counts(self):
+        return self._speed * self._elapsed_time + self._start_position
+
+    def target_units(self):
+        return self.target_tacho_counts() / self.wheel.unit_ratio / self.wheel.total_ratio
 
     def on_start(self):
         self._speed_regulator.reset()
@@ -67,10 +72,21 @@ class MotorAction(Action):
         self._motor.run_direct(duty_cycle_sp=0)
 
     def handle_loop(self, elapsed_time, progress_error):
-        self._elapsed_time = elapsed_time
-        duty_cycle = utils.crop_r(self._speed_regulator.regulate(self._motor.position), self._max_duty_cycle)
+        # if progress_error == 0:
+        #     error = 0
+        # else:
+        #     error = (progress_error * progress_error / 2) * (progress_error / abs(progress_error))
+        #     if abs(error) < 0.1:
+        #         error = 0
+        #     else:
+        #         error -= 0.1 * (error / abs(error))
+        self._elapsed_time = elapsed_time  # + error
+        # duty_cycle = utils.crop_r(self._speed_regulator.regulate(self._motor.position), self._max_duty_cycle)
         # duty_cycle += self._error_regulator.regulate(-progress_error * self.speed)
-        self._motor.duty_cycle_sp = utils.crop_r(duty_cycle, self._max_duty_cycle)
+        # self._motor.duty_cycle_sp = utils.crop_r(duty_cycle, self._max_duty_cycle)
+
+        self._motor.duty_cycle_sp = utils.crop_r(self._speed_regulator.regulate(self._motor.position),
+                                                 self._max_duty_cycle)
 
     def on_stop(self):
         self._motor.stop()
@@ -78,8 +94,7 @@ class MotorAction(Action):
 
 class DriveCoordinator(CycleThreadCoordinator):
     def __init__(self, motor_actions, time_len=None, angle_deg=None, distance_unit=None):
-        CycleThreadCoordinator.__init__(self, motor_actions, diff_limit=10, cycle_time=_CYCLE_TIME)
-        # TODO: test diff_limit
+        CycleThreadCoordinator.__init__(self, motor_actions, cycle_time=_CYCLE_TIME)
         self.setDaemon(True)
 
         self._time_len = time_len
@@ -89,7 +104,7 @@ class DriveCoordinator(CycleThreadCoordinator):
         if len(motor_actions) == 0:
             self.stop()
         else:
-            self._min_action = self._max_action = motor_actions[0].wheel
+            self._min_action = self._max_action = motor_actions[0]
             for motor_action in motor_actions:
                 if motor_action.wheel.offset < self._min_action.wheel.offset:
                     self._min_action = motor_action
@@ -131,23 +146,27 @@ class DriveCoordinator(CycleThreadCoordinator):
         min_traveled = min_action.traveled_units()
         max_traveled = max_action.traveled_units()
 
-        if max_traveled == 0:
-            if min_traveled == 0:
-                return False
-            min_action, max_action = max_action, min_action
-            min_traveled, max_traveled = max_traveled, min_traveled
+        if abs(max_traveled) + abs(min_traveled) < 0.5:
+            return False
 
-        ratio = min_traveled / max_traveled
-        radius = (min_action.wheel.offset - ratio * max_action.wheel.offset) / (ratio - 1)
-        min_radius = radius + min_action.wheel.offset
-        max_radius = radius + max_action.wheel.offset
+        if max_traveled == 0:
+            min_radius = min_action.wheel.offset - max_action.wheel.offset
+            max_radius = 0
+        elif min_traveled == 0:
+            min_radius = 0
+            max_radius = max_action.wheel.offset - min_action.wheel.offset
+        else:
+            ratio = min_traveled / max_traveled
+            radius = (min_action.wheel.offset - ratio * max_action.wheel.offset) / (ratio - 1)
+            min_radius = radius + min_action.wheel.offset
+            max_radius = radius + max_action.wheel.offset
 
         if abs(min_radius) > abs(max_radius):
-            circuit = min_radius * math.pi
-            angle_deg = circuit / min_traveled
+            circuit = 2 * min_radius * math.pi
+            angle_deg = (min_traveled / circuit) * 360
         else:
-            circuit = max_radius * math.pi
-            angle_deg = circuit / max_traveled
+            circuit = 2 * max_radius * math.pi
+            angle_deg = (max_traveled / circuit) * 360
 
         return abs(angle_deg) > abs(self._angle_deg)
 
@@ -198,19 +217,21 @@ class Pilot:
         return self._max_speed_unit
 
     def _refresh_max_speed(self):
-        if len(self._wheels) == 0:
+        if not self._has_wheels or len(self._wheels) == 0:
             self._max_speed_tacho = 0
+            self._max_speed_deg = 0
+            self._max_speed_unit = 0
         else:
             self._max_speed_tacho = self._wheels[0].motor.max_speed
-            self._max_speed_deg = self._max_speed_tacho / self._wheels[0].wheel_total_ratio
-            self._max_speed_unit = self._max_speed_deg / self._wheels[0].wheel_unit_ratio
+            self._max_speed_deg = self._max_speed_tacho / self._wheels[0].total_ratio
+            self._max_speed_unit = self._max_speed_deg / self._wheels[0].unit_ratio
             for wheel in self._wheels:
                 max_speed_tacho = wheel.motor.max_speed
-                self._max_speed_tacho = min(max_speed_tacho, self._max_speed_tacho)
-                max_speed_deg = max_speed_tacho / wheel.wheel_total_ratio
-                self._max_speed_deg = min(max_speed_deg, self._max_speed_deg)
-                max_speed_unit = max_speed_deg / wheel.wheel_unit_ratio
-                self._max_speed_unit = min(max_speed_unit, self._max_speed_unit)
+                self._max_speed_tacho = min(abs(max_speed_tacho), self._max_speed_tacho)
+                max_speed_deg = max_speed_tacho / wheel.total_ratio
+                self._max_speed_deg = min(abs(max_speed_deg), self._max_speed_deg)
+                max_speed_unit = max_speed_deg / wheel.unit_ratio
+                self._max_speed_unit = min(abs(max_speed_unit), self._max_speed_unit)
 
     def _refresh_max_offset(self):
         if len(self._wheels) == 0:
@@ -229,9 +250,10 @@ class Pilot:
 
     def reset(self):
         self._stop_coordinator()
-        for wheel in self._wheels:
-            wheel.motor.reset()
-            wheel.motor.stop_action = 'brake'
+        if self._has_wheels:
+            for wheel in self._wheels:
+                wheel.motor.reset()
+                wheel.motor.stop_action = 'brake'
 
     def stop(self):
         self._stop_coordinator()
@@ -239,24 +261,24 @@ class Pilot:
             wheel.motor.stop()
 
     def _course_percent_to_speeds(self, course_percent, max_speed):
-        duty_cycles = []
+        speeds = []
 
         if course_percent == 0:
             for i in range(len(self._wheels)):
-                duty_cycles.append(max_speed)
-            return duty_cycles
+                speeds.append(max_speed)
+            return speeds
 
         if max_speed == 0:
             for i in range(len(self._wheels)):
-                duty_cycles.append(0)
-            return duty_cycles
+                speeds.append(0)
+            return speeds
 
-        max_pos = self._max_offset * (1 if course_percent > 0 else -1)
+        max_pos = self._max_offset * (-1 if course_percent > 0 else 1)
         for wheel in self._wheels:
             effect = abs(wheel.offset - max_pos) / (2 * self._max_offset)
-            duty_cycles.append(max_speed - (course_percent * effect / 100 * max_speed))
+            speeds.append(max_speed - (abs(course_percent) * effect / 100 * max_speed))
 
-        return duty_cycles
+        return speeds
 
     def _course_r_to_speeds(self, course_r, speed, max_speed):
         if course_r is 0:
@@ -269,15 +291,15 @@ class Pilot:
         speeds = []
         max_found_speed = 0
         if course_r is None:
-            max_found_speed = max_speed
+            max_found_speed = speed
             for i in range(len(self._wheels)):
-                speeds.append(max_speed)
+                speeds.append(speed)
         else:
-            center_way_circuit = course_r * math.pi
+            center_way_circuit = 2 * -course_r * math.pi
             one_unit_speed = speed / center_way_circuit
             for i in range(len(self._wheels)):
                 wheel = self._wheels[i]
-                wheel_way_circuit = (course_r + wheel.offset) * math.pi
+                wheel_way_circuit = 2 * (-course_r + wheel.offset) * math.pi
                 wheel_speed_unit = one_unit_speed * wheel_way_circuit
                 max_found_speed = max(max_found_speed, abs(wheel_speed_unit))
                 speeds.append(wheel_speed_unit)
@@ -319,14 +341,14 @@ class Pilot:
     def _speeds_unit_to_deg(self, speeds_unit):
         speeds_deg = []
         for i in range(len(speeds_unit)):
-            speeds_deg.append(speeds_unit[i] * self._wheels[i].wheel_unit_ratio)
+            speeds_deg.append(speeds_unit[i] * self._wheels[i].unit_ratio)
         return speeds_deg
 
-    def _speed_deg_to_tacho(self, speeds_deg):
+    def _speeds_deg_to_tacho(self, speeds_deg):
         speeds_tacho = []
         for i in range(len(speeds_deg)):
-            speeds_tacho.append(speeds_deg[i] * self._wheels[i].wheel_total_ratio)
-        return speeds_deg
+            speeds_tacho.append(speeds_deg[i] * self._wheels[i].total_ratio)
+        return speeds_tacho
 
     def _raw_run_unit(self, time_len=None, angle_deg=None, distance_unit=None, speeds_unit=None, max_duty_cycle=100,
                       async=False):
@@ -334,7 +356,7 @@ class Pilot:
             speeds_tacho = self._generate_max_speeds_tacho()
         else:
             self._validate_len(speeds_unit)
-            speeds_tacho = self._speed_deg_to_tacho(self._speeds_unit_to_deg(speeds_unit))
+            speeds_tacho = self._speeds_deg_to_tacho(self._speeds_unit_to_deg(speeds_unit))
 
         self._raw_run_tacho_ready(time_len, angle_deg, distance_unit, speeds_tacho, max_duty_cycle, async)
 
@@ -344,7 +366,7 @@ class Pilot:
             speeds_tacho = self._generate_max_speeds_tacho()
         else:
             self._validate_len(speeds_deg)
-            speeds_tacho = self._speed_deg_to_tacho(speeds_deg)
+            speeds_tacho = self._speeds_deg_to_tacho(speeds_deg)
 
         self._raw_run_tacho_ready(time_len, angle_deg, distance_unit, speeds_tacho, max_duty_cycle, async)
 
@@ -373,7 +395,7 @@ class Pilot:
         else:
             actions = []
             for i in range(len(speeds_tacho)):
-                actions.append(MotorAction(self._wheels[i].motor, speeds_tacho[i], max_duty_cycle))
+                actions.append(MotorAction(self._wheels[i], speeds_tacho[i], max_duty_cycle))
 
             self._stop_coordinator()
             self._running_coordinator = DriveCoordinator(actions, time_len, angle_deg, distance_unit)
@@ -389,7 +411,8 @@ class Pilot:
                                     course_percent=None, speed_unit=None, max_duty_cycle=100, async=False):
         self._raw_run_unit(time_len=time_len, angle_deg=angle_deg, distance_unit=distance_unit,
                            speeds_unit=self._course_percent_to_speeds
-                           (course_percent, min(speed_unit, self._max_speed_unit)),
+                           (course_percent, speed_unit if abs(speed_unit) <= abs(self._max_speed_unit)
+                           else self._max_speed_unit),
                            max_duty_cycle=max_duty_cycle, async=async)
 
     def run_timed(self, time_len: float, speeds_tacho: array = None, max_duty_cycle: int = 100, async: bool = False):
@@ -470,7 +493,7 @@ class Pilot:
     def restore_positions(self, positions: array, speed_unit=None):
         if speed_unit is None:
             speed_unit = self._max_speed_unit
-        speed_tacho = self._speed_deg_to_tacho(self._speeds_unit_to_deg(speed_unit))
+        speed_tacho = self._speeds_deg_to_tacho(self._speeds_unit_to_deg([speed_unit]))[0]
 
         changes = []
         max_change = 0

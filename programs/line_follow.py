@@ -14,8 +14,8 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         ControllerConfigWrapper.__init__(self, controller)
 
         self._start_positions = []
-        self._power_regulator = PercentRegulator(const_p=1, const_i=0, const_d=3,  # TODO: to config
-                                                 getter_target=self._get_target_distance)
+        self._power_regulator = PercentRegulator(const_p=1, const_i=3, const_d=2,  # TODO: to config
+                                                 getter_target=lambda: -self._get_target_distance())
 
     def _get_target_distance(self):
         self.get_config_value('OBSTACLE_MIN_DISTANCE') * 0.8
@@ -56,13 +56,13 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         SCANNER.rotate_scanner_to_pos(0)
 
     def handle_loop(self):
-        cycle_time = 0.1  # TODO: to config
+        cycle_time = 0.05  # TODO: to config
         wait_time = 2  # TODO: to config
         last_time = time.time()
         while not self.controller.stop:
             distance_val = SCANNER.value_scan(0)
-            power = self._power_regulator.regulate(distance_val)
-            PILOT.update_duty_cycle_sp(0, power if power < 0 else 0)
+            power = self._power_regulator.regulate(-distance_val)
+            PILOT.update_duty_cycle_sp(0, utils.crop_m(power, max_out=0))
 
             if distance_val > self._get_target_distance():
                 PILOT.stop()
