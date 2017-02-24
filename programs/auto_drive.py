@@ -3,10 +3,10 @@
 import math
 import threading
 
+import config as _config
+from hardware import *
 from utils import utils
-from .. import config as _config
-from ..hardware import *
-from ..utils.robot_program import *
+from utils.robot_program import *
 
 
 class AutoDriveController(SimpleRobotProgramController):

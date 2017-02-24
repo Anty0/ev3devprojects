@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import config as _config
+from hardware import *
 from utils import utils
-from ..hardware import *
-from ..utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
-from ..utils.regulator import *
-from ..utils.robot_program import *
+from utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
+from utils.regulator import *
+from utils.robot_program import *
 
 
 class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):

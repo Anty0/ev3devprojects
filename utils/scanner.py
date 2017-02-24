@@ -6,7 +6,7 @@ class ScannerPropulsion:
         self.motor = motor
 
         self.gear_ratio = gear_ratio
-        self.motor_tacho_ratio = motor.count_per_rot / 360
+        self.motor_tacho_ratio = motor.count_per_rot / 360 if motor.connected else 1
         self.total_ratio = self.gear_ratio * self.motor_tacho_ratio
 
 
