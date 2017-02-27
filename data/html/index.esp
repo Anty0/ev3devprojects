@@ -3,6 +3,9 @@
   "data": [
     "index.html",
     "index_program_line.html",
-    "index_program_config_line.html"
+    "index_program_category_line.html",
+    "index_program_input_config_line.html",
+    "index_program_enum_config_line.html",
+    "index_program_enum_option_config_line.html"
   ]
 }

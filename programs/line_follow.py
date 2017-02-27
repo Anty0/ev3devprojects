@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import math
 
 import config as _config
 from hardware import *
-from utils import utils
 from utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
 from utils.regulator import *
 from utils.robot_program import *
@@ -290,6 +290,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         max_reflect = self.controller.get_max_reflex()
         line_side = self.get_config_value('LINE_SIDE')
         target_cycle_time = self.get_config_value('TARGET_CYCLE_TIME')
+        power_adaptation = self.get_config_value('POWER_ADAPTATION')
         target_power = self._next_power(target_cycle_time)
 
         read_val = COLOR_SENSOR.value()
@@ -300,7 +301,11 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
                 or self._test_stop_on_line_end():
             return
 
-        PILOT.update_duty_cycle(course, target_power)
+        if power_adaptation:
+            target_power_mul = (1 / (1 + math.pow(abs(self._steer_regulator.last_integral) / 25, 3))) * 0.8 + 0.2
+        else:
+            target_power_mul = 1
+        PILOT.update_duty_cycle(course, target_power * target_power_mul)
 
         self._last_time = utils.wait_to_cycle_time(self._last_time, target_cycle_time)
 

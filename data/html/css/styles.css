@@ -30,7 +30,7 @@ div#log-container {
     float: right;
     margin: 15px;
     padding: 0;
-    width: calc(100% - 560px);
+    width: calc(100% - 585px);
 }
 
 div#log-wrapper {
@@ -48,7 +48,7 @@ div#programs-list {
     float: left;
     margin: 15px;
     padding: 0;
-    width: 500px;
+    width: 525px;
 }
 
 .program-line {
@@ -131,6 +131,16 @@ div#programs-list {
 
 .program-line-config {
     /*margin-right: 5px;*/
+}
+
+.program-line-config-category {
+    margin: 0;
+    padding: 0 10px;
+}
+
+.program-line-config-category-content {
+    margin: 0;
+    padding: 0 10px;
 }
 
 .program-line-additional-controls {

@@ -59,14 +59,18 @@ class SimpleRobotProgramController(RobotProgramController):
 
     def _convert_config_value(self, name, value):
         value_type = self.robot_program.config_values[name]['type']
+        converted_value = value
         if value_type == 'str' or value_type == 'string':
-            value = str(value)
+            converted_value = str(value)
         elif value_type == 'int' or value_type == 'integer':
-            value = int(value)
+            converted_value = int(value)
         elif value_type == 'float':
-            value = float(value)
+            converted_value = float(value)
         elif value_type == 'bool' or value_type == 'boolean':
-            value = bool(value)
+            converted_value = bool(value)
+        elif value_type == 'enum':
+            converted_value = self.robot_program.config_values[name]['enum_options'][str(value)]
+        log.debug('Setting value of ' + value_type + ' ' + name + ' to ' + value + ' as ' + converted_value)
         return value
 
     def update_config(self, config=None):

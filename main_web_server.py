@@ -42,9 +42,14 @@ class MainWebHandler(FilesWebHandler):
         data_dir = self._get_data_dir()
         page_text_filename = data_dir + os.sep + data[0]
         program_line_filename = data_dir + os.sep + data[1]
-        program_config_line_filename = data_dir + os.sep + data[2]
-        if not os.path.isfile(page_text_filename) or not os.path.isfile(program_line_filename) \
-                or not os.path.isfile(program_config_line_filename):
+        program_category_line_filename = data_dir + os.sep + data[2]
+        program_input_config_line_filename = data_dir + os.sep + data[3]
+        program_enum_config_line_filename = data_dir + os.sep + data[4]
+        program_enum_option_config_line_filename = data_dir + os.sep + data[5]
+        if not os.path.isfile(page_text_filename) \
+                or not os.path.isfile(program_line_filename) \
+                or not os.path.isfile(program_category_line_filename) \
+                or not os.path.isfile(program_input_config_line_filename):
             return False
 
         self.send_response(200)
@@ -56,43 +61,71 @@ class MainWebHandler(FilesWebHandler):
                 page_text = fh.read()
             with open(program_line_filename, mode='r') as fh:
                 program_line = fh.read()
-            with open(program_config_line_filename, mode='r') as fh:
-                program_config_line = fh.read()
+            with open(program_category_line_filename, mode='r') as fh:
+                program_category_line = fh.read()
+            with open(program_input_config_line_filename, mode='r') as fh:
+                program_input_config_line = fh.read()
+            with open(program_enum_config_line_filename, mode='r') as fh:
+                program_enum_config_line = fh.read()
+            with open(program_enum_option_config_line_filename, mode='r') as fh:
+                program_enum_option_config_line = fh.read()
 
             programs_lines = ''
             for robot_program in robot_programs.values():
-                actual_program_config = ''
+                categories = odict()
                 for value_name, value_info in robot_program.config_values.items():
-                    value_display_name = value_info['display_name']
-                    value_type = value_info['type']
-                    default_value = value_info['default_value']
+                    category = value_info['category'] if 'category' in value_info else 'Main'
+                    if category not in categories:
+                        categories[category] = odict()
+                    categories[category][value_name] = value_info
 
-                    if value_type == 'str' or value_type == 'string':
-                        value_input_type = 'text'
-                        value_style_type = 'string'
-                        value_additional_arguments = ''
-                    elif value_type == 'int' or value_type == 'integer':
-                        value_input_type = 'number'
-                        value_style_type = 'integer'
-                        value_additional_arguments = 'step=1'
-                    elif value_type == 'float':
-                        value_input_type = 'number'
-                        value_style_type = 'float'
-                        value_additional_arguments = 'step=any'
-                    elif value_type == 'bool' or value_type == 'boolean':
-                        value_input_type = 'checkbox'
-                        value_style_type = 'boolean'
-                        value_additional_arguments = 'checked' if default_value else ''
-                    else:
-                        continue
+                actual_program_config = ''
+                for category_name, category_content in categories.items():
+                    actual_program_category_config = ''
+                    for value_name, value_info in category_content.items():
+                        value_display_name = value_info['display_name']
+                        value_type = value_info['type']
+                        default_value = value_info['default_value']
 
-                    actual_program_config += '\n' + program_config_line \
-                        .replace('<!--robot_program_config_value_name-->', value_name) \
-                        .replace('<!--robot_program_config_value_display_name-->', value_display_name) \
-                        .replace('<!--robot_program_config_value_input_type-->', value_input_type) \
-                        .replace('<!--robot_program_config_value_style_type-->', value_style_type) \
-                        .replace('<!--robot_program_config_value_additional_arguments-->', value_additional_arguments) \
-                        .replace('<!--robot_program_config_value_default_value-->', str(default_value))
+                        if value_type == 'enum':  # hack to support enum
+                            options = value_info['enum_options']
+                            default_value = list(options.keys())[list(options.values()).index(default_value)]
+                            value_type = 'str'
+
+                        if value_type == 'str' or value_type == 'string':
+                            value_input_type = 'text'
+                            value_style_type = 'string'
+                            value_additional_arguments = ''
+                        elif value_type == 'int' or value_type == 'integer':
+                            value_input_type = 'number'
+                            value_style_type = 'integer'
+                            value_additional_arguments = 'step=1'
+                        elif value_type == 'float':
+                            value_input_type = 'number'
+                            value_style_type = 'float'
+                            value_additional_arguments = 'step=any'
+                        elif value_type == 'bool' or value_type == 'boolean':
+                            value_input_type = 'checkbox'
+                            value_style_type = 'boolean'
+                            value_additional_arguments = 'checked' if default_value else ''
+                        elif value_type == 'enum':
+                            # TODO: add support
+                            continue
+                        else:
+                            continue
+
+                        actual_program_category_config += '\n' + program_input_config_line \
+                            .replace('<!--robot_program_config_value_name-->', value_name) \
+                            .replace('<!--robot_program_config_value_display_name-->', value_display_name) \
+                            .replace('<!--robot_program_config_value_input_type-->', value_input_type) \
+                            .replace('<!--robot_program_config_value_style_type-->', value_style_type) \
+                            .replace('<!--robot_program_config_value_additional_arguments-->',
+                                     value_additional_arguments) \
+                            .replace('<!--robot_program_config_value_default_value-->', str(default_value))
+
+                    actual_program_config += program_category_line \
+                        .replace('<!--robot_program_category_config-->', actual_program_category_config) \
+                        .replace('<!--robot_program_config_category_name-->', category_name)
 
                 running = robot_program.name in running_controllers
                 programs_lines += '\n' + program_line \
@@ -100,7 +133,7 @@ class MainWebHandler(FilesWebHandler):
                     .replace('<!--robot_program_name-->', robot_program.name) \
                     .replace('<!--robot_program_state-->', 'running' if running else 'not running') \
                     .replace('<!--robot_program_state_switch-->', 'Stop' if running else 'Start')
-                pass
+
             page_text = page_text.replace('<!--robot_programs-->', programs_lines)
             self.wfile.write(page_text.encode())
         return True
