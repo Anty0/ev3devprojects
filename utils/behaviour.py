@@ -45,7 +45,7 @@ class Behaviours:
                 behaviour.on_take_control()
 
         if behaviour is not None:
-            behaviour.take_control()
+            behaviour.should_take_control()
 
 
 class MultiBehaviour(Behaviours):
@@ -58,7 +58,7 @@ class MultiBehaviour(Behaviours):
     def on_loose_control(self):
         self.force_loose_control()
 
-    def take_control(self) -> bool:
+    def should_take_control(self) -> bool:
         for behaviour in self.behaviours:
             if not behaviour.should_take_control():
                 return False

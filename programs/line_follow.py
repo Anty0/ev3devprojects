@@ -196,7 +196,7 @@ class ObstacleDetectionBehaviour(MultiBehaviour, ControllerConfigWrapper):
             ObstacleAvoidBehaviour(controller)
         ])
 
-    def take_control(self) -> bool:
+    def should_take_control(self) -> bool:
         if not SCANNER.is_connected() or not SCANNER.has_motor() or SCANNER.is_running() \
                 or (not self.get_config_value('OBSTACLE_AVOID') and not self.get_config_value('COLLISION_AVOID')):
             return False
@@ -220,6 +220,9 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
                                                  getter_i=lambda: self.get_config_value('REG_STEER_I'),
                                                  getter_d=lambda: self.get_config_value('REG_STEER_D'),
                                                  getter_target=lambda: self.get_config_value('TARGET_REFLECT'))
+
+    def get_last_power(self):
+        return self._last_power
 
     def reset_regulation(self):
         self._steer_regulator.reset()
@@ -354,17 +357,18 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
 
     def stop_loop(self):
         last_behaviour = self.last_behaviour
-        return super().stop_loop() and (not isinstance(last_behaviour, LineFollowBehaviour)
-                                        or last_behaviour.last_power < 5)
+        return BehaviourController.stop_loop(self) \
+               and (not isinstance(last_behaviour, LineFollowBehaviour)
+                    or last_behaviour.get_last_power() < 5)
 
     def on_config_change(self):
-        super().on_config_change()
+        SimpleRobotProgramController.on_config_change(self)
         last_behaviour = self.last_behaviour
         if isinstance(last_behaviour, LineFollowBehaviour):
             last_behaviour.reset_regulation()
 
     def on_config_value_change(self, name, new_value):
-        super().on_config_value_change(name, new_value)
+        SimpleRobotProgramController.on_config_value_change(self, name, new_value)
         last_behaviour = self.last_behaviour
         if (name == 'REG_STEER_I' or name == 'REG_STEER_D') \
                 and isinstance(last_behaviour, LineFollowBehaviour):

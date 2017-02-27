@@ -70,8 +70,9 @@ class SimpleRobotProgramController(RobotProgramController):
             converted_value = bool(value)
         elif value_type == 'enum':
             converted_value = self.robot_program.config_values[name]['enum_options'][str(value)]
-        log.debug('Setting value of ' + value_type + ' ' + name + ' to ' + value + ' as ' + converted_value)
-        return value
+        log.debug('Setting value of ' + str(value_type) + ' ' + str(name)
+                  + ' to ' + str(value) + ' as ' + str(type(converted_value)) + ' ' + str(converted_value))
+        return converted_value
 
     def update_config(self, config=None):
         self._update_config(config)

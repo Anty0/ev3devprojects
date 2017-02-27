@@ -158,8 +158,8 @@ class MainWebHandler(FilesWebHandler):
                         running = True
                     else:
                         status = 'success'
-                except Exception as e:
-                    log.error(str(e))
+                except Exception:
+                    log.exception('Can\'t execute command')
                     additional_controls = ''
                     status = 'fail'
         else:
