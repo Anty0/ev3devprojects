@@ -33,6 +33,7 @@ root.addHandler(ch)
 log = logging.getLogger(__name__)
 
 # Other
+SIMULATION_MODE = False
 ENABLE_SOUNDS = True
 DATA_DIR = os.curdir + os.sep + 'data'
 
