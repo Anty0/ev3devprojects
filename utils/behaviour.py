@@ -45,7 +45,7 @@ class Behaviours:
                 behaviour.on_take_control()
 
         if behaviour is not None:
-            behaviour.should_take_control()
+            behaviour.handle_loop()
 
 
 class MultiBehaviour(Behaviours):
@@ -94,4 +94,4 @@ class BehaviourController(RobotProgramController, Behaviours):
 
     def wait_to_exit(self):
         while self.thread.is_alive():
-            time.sleep(0.1)
+            time.sleep(0)

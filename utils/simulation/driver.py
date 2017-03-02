@@ -1,5 +1,9 @@
+import time
+from threading import Thread
+
 from ev3dev.auto import TouchSensor, ColorSensor, UltrasonicSensor, GyroSensor, InfraredSensor, SoundSensor, LightSensor
 
+from utils.utils import wait_to_cycle_time
 from .controller import Controller
 from .interface import DeviceInterface, MotorInterface, SensorInterface, TouchSensorInterface, ColorSensorInterface, \
     UltrasonicSensorInterface, GyroSensorInterface, InfraredSensorInterface, SoundSensorInterface, \
@@ -21,7 +25,8 @@ class MotorDriver(DeviceDriver):
     def __init__(self, controller: Controller, device_interface: MotorInterface):
         DeviceDriver.__init__(self, controller, device_interface)
         self._address = device_interface.address
-        self._command = ''
+        self._last_command = ''
+        self._command = 'stop'
         self._commands = device_interface.commands
         self._count_per_rot = device_interface.count_per_rot  # TODO: better simulation of unknown (None) val
         self._count_per_m = device_interface.count_per_m  # TODO: better simulation of unknown (None) val
@@ -36,9 +41,115 @@ class MotorDriver(DeviceDriver):
         self._speed_sp = 0
         self._ramp_up_sp = device_interface.ramp_up_sp
         self._ramp_down_sp = device_interface.ramp_down_sp
+        self._state = []
         self._stop_action = device_interface.stop_action
         self._stop_actions = device_interface.stop_actions
         self._time_sp = 0
+
+        self._commands_handler_thread = None
+
+    def _commands_handler_loop(self):
+        cycle_time = 0.05
+        self._last_command = ''
+        command_args = {}
+        last_time = time.time()
+        while True:
+            actual_command = self._command
+            if self._last_command != actual_command:
+                if actual_command == 'run-forever':
+                    command_args = {'speed': self._speed_sp}
+                elif actual_command == 'run-to-abs-pos':
+                    command_args = {
+                        'speed': self._speed_sp,
+                        'position': self._position_sp,
+                        'stop_action': self._stop_action
+                    }
+                elif actual_command == 'run-to-rel-pos':
+                    command_args = {
+                        'speed': self._speed_sp,
+                        'position': self._position + self._position_sp,
+                        'stop_action': self._stop_action
+                    }
+                elif actual_command == 'run-timed':
+                    command_args = {
+                        'speed': self._speed_sp,
+                        'start_time': time.time(),
+                        'time': self._time_sp / 1000,
+                        'stop_action': self._stop_action
+                    }
+                elif actual_command == 'run-direct':
+                    command_args = {}
+                elif actual_command == 'stop':
+                    command_args = {'stop_action': self._stop_action}
+                elif actual_command == 'reset':
+                    command_args = {}
+                else:
+                    command_args = {}
+                self._last_command = actual_command
+
+            if actual_command == 'run-forever':
+                speed = command_args['speed']
+                self._position += speed * cycle_time
+                self._speed = speed
+                self._duty_cycle = speed / abs(speed) * 100 if speed != 0 else 0
+                self._state = ['running']
+            elif actual_command == 'run-to-abs-pos' or actual_command == 'run-to-rel-pos':
+                speed = command_args['speed']
+                actual_pos = self._position
+                target_pos = command_args['position']
+                diff = target_pos - actual_pos
+                way = diff / abs(diff) if diff != 0 else 0
+                change = abs(speed * cycle_time) * way
+                if abs(diff) < abs(change):
+                    self._position = target_pos
+                    self._command = self._last_command = 'stop'
+                else:
+                    self._position += change
+                self._speed = abs(speed) * way
+                self._duty_cycle = way * 100
+                self._state = ['running']
+            elif actual_command == 'run-timed':
+                speed = command_args['speed']
+                self._position += speed * cycle_time
+                self._speed = speed
+                self._duty_cycle = speed / abs(speed) * 100 if speed != 0 else 0
+                self._state = ['running']
+
+                if time.time() - command_args['start_time'] >= command_args['time']:
+                    self._command = self._last_command = 'stop'
+            elif actual_command == 'run-direct':
+                duty_cycle = self._duty_cycle_sp
+                speed = (duty_cycle - (8 * (duty_cycle / abs(duty_cycle)))) * 10 if abs(duty_cycle) > 8 else 0
+                self._position += speed * cycle_time
+                self._speed = speed
+                self._duty_cycle = duty_cycle
+                self._state = ['running']
+                pass
+            elif actual_command == 'stop':
+                self._speed = 0
+                self._duty_cycle = 0
+                if command_args['stop_action'] == 'hold':
+                    self._state = ['holding']
+                else:
+                    self._state = []
+                pass
+            elif actual_command == 'reset':
+                self._last_command = ''
+                self._command = 'stop'
+                self._duty_cycle = 0
+                self._duty_cycle_sp = 0
+                self._polarity = 'normal'
+                self._position = 0
+                self._position_sp = 0
+                self._speed = 0
+                self._speed_sp = 0
+                self._ramp_up_sp = 0
+                self._ramp_down_sp = 0
+                self._state = []
+                self._stop_action = 'coast'
+                self._time_sp = 0
+
+            last_time = wait_to_cycle_time(last_time, cycle_time)
 
     @property
     def address(self):
@@ -52,7 +163,21 @@ class MotorDriver(DeviceDriver):
     def command(self, value):
         if value not in self._commands:
             raise Exception()
-        pass  # TODO: implement
+
+        if self._commands_handler_thread is None:
+            self._commands_handler_thread = Thread(target=self._commands_handler_loop, daemon=True)
+            self._commands_handler_thread.start()
+
+        while self._last_command != self._command:
+            time.sleep(0)
+
+        if self._command == value:
+            self._command = ''
+
+            while self._last_command != self._command:
+                time.sleep(0)
+
+        self._command = value
 
     @property
     def commands(self):
@@ -74,11 +199,11 @@ class MotorDriver(DeviceDriver):
 
     @property
     def duty_cycle(self):
-        return str(self._duty_cycle)
+        return str(int(self._duty_cycle))
 
     @property
     def duty_cycle_sp(self):
-        return str(self._duty_cycle_sp)
+        return str(int(self._duty_cycle_sp))
 
     @duty_cycle_sp.setter
     def duty_cycle_sp(self, value):
@@ -100,7 +225,7 @@ class MotorDriver(DeviceDriver):
 
     @property
     def position(self):
-        return str(self._position)
+        return str(int(self._position))
 
     @position.setter
     def position(self, value):
@@ -108,7 +233,7 @@ class MotorDriver(DeviceDriver):
 
     @property
     def position_sp(self):
-        return str(self._position_sp)
+        return str(int(self._position_sp))
 
     @position_sp.setter
     def position_sp(self, value):
@@ -120,19 +245,21 @@ class MotorDriver(DeviceDriver):
 
     @property
     def speed(self):
-        return str(self._speed)
+        return str(int(self._speed))
 
     @property
     def speed_sp(self):
-        return str(self._speed_sp)
+        return str(int(self._speed_sp))
 
     @speed_sp.setter
     def speed_sp(self, value):
+        if abs(int(value)) > self._max_speed:
+            raise Exception()
         self._speed_sp = int(value)
 
     @property
     def ramp_up_sp(self):
-        return str(self._ramp_up_sp)
+        return str(int(self._ramp_up_sp))
 
     @ramp_up_sp.setter
     def ramp_up_sp(self, value):
@@ -140,7 +267,7 @@ class MotorDriver(DeviceDriver):
 
     @property
     def ramp_down_sp(self):
-        return str(self._ramp_down_sp)
+        return str(int(self._ramp_down_sp))
 
     @ramp_down_sp.setter
     def ramp_down_sp(self, value):
@@ -148,7 +275,13 @@ class MotorDriver(DeviceDriver):
 
     @property
     def state(self):
-        return ''  # TODO: implement
+        state_len = len(self._state)
+        if state_len == 0:
+            return ''
+        value = self._state[0]
+        for i in range(1, state_len):
+            value += ' ' + self._state[i]
+        return value
 
     @property
     def stop_action(self):
@@ -172,11 +305,11 @@ class MotorDriver(DeviceDriver):
 
     @property
     def time_sp(self):
-        return str(int(self._time_sp * 1000))
+        return str(int(self._time_sp))
 
     @time_sp.setter
     def time_sp(self, value):
-        self._time_sp = int(value) / 1000
+        self._time_sp = int(value)
 
 
 class SensorDriver(DeviceDriver):
@@ -613,7 +746,7 @@ class LedDriver(DeviceDriver):
         self._max_brightness = device_interface.max_brightness
         self._brightness = device_interface.brightness
         self._triggers = device_interface.triggers
-        self._trigger = ''
+        self._trigger = 'none'
         self._delay_on = device_interface.delay_on
         self._delay_off = device_interface.delay_off
 
@@ -630,7 +763,7 @@ class LedDriver(DeviceDriver):
         self._brightness = int(value)
 
     @property
-    def triggers(self):
+    def trigger(self):
         triggers_len = len(self._triggers)
         if triggers_len == 0:
             return ''
@@ -638,10 +771,6 @@ class LedDriver(DeviceDriver):
         for i in range(1, triggers_len):
             value += ' ' + self._triggers[i]
         return value
-
-    @property
-    def trigger(self):
-        return self._trigger
 
     @trigger.setter
     def trigger(self, value):
@@ -684,5 +813,5 @@ DRIVERS = {
     'lego-ev3-ir': InfraredSensorDriver,
     'lego-nxt-sound': SoundSensorDriver,
     'lego-nxt-light': LightSensorDriver,
-    'lego-ev3-leds': LedDriver  # TODO: extract driver name from robot
+    'leds-pwm': LedDriver
 }

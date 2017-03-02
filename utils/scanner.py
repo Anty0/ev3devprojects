@@ -73,7 +73,7 @@ class Scanner:
             method()
 
     def wait_to_scanner_stop(self):
-        self.repeat_while_scanner_running(lambda: time.sleep(0.05))
+        self.repeat_while_scanner_running(lambda: time.sleep(0))
 
     def value_get(self, percent=True):
         if percent:

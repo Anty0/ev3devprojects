@@ -119,7 +119,7 @@ class AutoDriveController(SimpleRobotProgramController):
 
     def wait_to_exit(self):
         while self.thread.is_alive():
-            time.sleep(0.1)
+            time.sleep(0)
 
 
 class AutoDriveRobotProgram(RobotProgram):

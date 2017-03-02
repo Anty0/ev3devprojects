@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import logging
 import math
 import time
 
@@ -8,6 +9,8 @@ from utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
 from utils.regulator import PercentRegulator
 from utils.robot_program import RobotProgram, SimpleRobotProgramController, ControllerConfigWrapper
 from utils.utils import crop_r, crop_m, wait_to_cycle_time
+
+log = logging.getLogger(__name__)
 
 
 class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
@@ -351,6 +354,9 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
             PILOT.run_percent_drive_to_angle_deg(45, 200, 10)
             PILOT.repeat_while_running(lambda: self._scan_min_max_reflect(reflect))
 
+        if reflect[0] == reflect[1]:
+            log.error('Failed to detect reflect, falling back to defaults.')
+            reflect = [None, None]
         self.set_private_config_value('MIN_REFLECT', reflect[0])
         self.set_private_config_value('MAX_REFLECT', reflect[1])
 

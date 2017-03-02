@@ -523,4 +523,4 @@ class Pilot:
             method()
 
     def wait_to_stop(self, cond_and=None, cond_or=None):
-        self.repeat_while_running(lambda: time.sleep(0.05), cond_and, cond_or)
+        self.repeat_while_running(lambda: time.sleep(0), cond_and, cond_or)

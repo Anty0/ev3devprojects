@@ -57,10 +57,10 @@ class Controller:
     def _start_odometry(self):
         if self._odometry is None:
             self._odometry = Thread(target=self._run_odometry, daemon=True)
-            self._odometry.start()
+            # self._odometry.start()
 
     def _run_odometry(self):
-        while True:
+        while True:  # TODO: implement and allow starting
             pass
         pass
 

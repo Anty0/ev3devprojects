@@ -93,6 +93,8 @@ class SimMotor(SimDevice, Motor):
     def __init__(self, sim_environment, address=None, name_pattern=Motor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         Motor.__init__(self, address, name_pattern, name_exact, **kwargs)
+        if address is not None:
+            kwargs['address'] = address
         SimDevice.__init__(self, sim_environment, self.SYSTEM_CLASS_NAME, name_pattern, name_exact, **kwargs)
 
     @property
@@ -197,6 +199,8 @@ class SimSensor(SimDevice, Sensor):
     def __init__(self, sim_environment, address=None, name_pattern=Sensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         Sensor.__init__(self, address, name_pattern, name_exact, **kwargs)
+        if address is not None:
+            kwargs['address'] = address
         SimDevice.__init__(self, sim_environment, self.SYSTEM_CLASS_NAME,
                            name_pattern, name_exact, **kwargs)
 
@@ -270,6 +274,8 @@ class SimLed(SimDevice, Led):
     def __init__(self, sim_environment, address=None, name_pattern=Led.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         Led.__init__(self, address, name_pattern, name_exact, **kwargs)
+        if address is not None:
+            kwargs['address'] = address
         SimDevice.__init__(self, sim_environment, address, name_pattern, name_exact, **kwargs)
 
     @property

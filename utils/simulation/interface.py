@@ -213,12 +213,16 @@ class LedInterface(DeviceInterface):
 class EV3LedInterface(LedInterface):
     def __init__(self, position: Position2D, name):
         LedInterface.__init__(self, position, name)
-        self.driver_name = 'lego-ev3-leds'  # TODO: extract from robot
-        self.max_brightness = 100  # TODO: extract from robot
+        self.driver_name = 'leds-pwm'
+        self.max_brightness = 255
         self.brightness = 0
-        self.triggers = []  # TODO: extract from robot
-        self.delay_on = 100  # TODO: extract from robot
-        self.delay_off = 100  # TODO: extract from robot
+        self.triggers = ['none', 'timer']
+        # none kbd-scrolllock kbd-numlock kbd-capslock kbd-kanalock kbd-shiftlock kbd-altgrlock kbd-ctrllock
+        # kbd-altlock kbd-shiftllock kbd-shiftrlock kbd-ctrlllock kbd-ctrlrlock mmc0 timer heartbeat default-on
+        # transient legoev3-battery-charging-or-full legoev3-battery-charging legoev3-battery-full
+        # legoev3-battery-charging-blink-full-solid rfkill0 rfkill1
+        self.delay_on = 500
+        self.delay_off = 500
 
 
 class PowerSupplyInterface(DeviceInterface):  # placeholder
