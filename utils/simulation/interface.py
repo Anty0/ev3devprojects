@@ -1,4 +1,5 @@
-from ev3dev.auto import Motor, Sensor, Led
+from ev3dev.auto import Motor, Sensor, Led, TouchSensor, ColorSensor, UltrasonicSensor, GyroSensor, InfraredSensor, \
+    SoundSensor, LightSensor
 
 from utils.position import Position2D
 
@@ -97,7 +98,7 @@ class TouchSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'TOUCH'
+        self.mode = TouchSensor.MODE_TOUCH
 
 
 class EV3TouchSensorInterface(TouchSensorInterface):
@@ -116,7 +117,7 @@ class ColorSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'COL-REFLECT'
+        self.mode = ColorSensor.MODE_COL_REFLECT
 
 
 class EV3ColorSensorInterface(ColorSensorInterface):
@@ -129,7 +130,7 @@ class UltrasonicSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'US-DIST-CM'
+        self.mode = UltrasonicSensor.MODE_US_DIST_CM
 
 
 class EV3UltrasonicSensorInterface(UltrasonicSensorInterface):
@@ -148,7 +149,7 @@ class GyroSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'GYRO-ANG'
+        self.mode = GyroSensor.MODE_GYRO_ANG
 
 
 class EV3GyroSensorInterface(GyroSensorInterface):
@@ -161,7 +162,7 @@ class InfraredSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'IR-PROX'
+        self.mode = InfraredSensor.MODE_IR_PROX
 
 
 class EV3InfraredSensorInterface(InfraredSensorInterface):
@@ -174,7 +175,7 @@ class SoundSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'DB'
+        self.mode = SoundSensor.MODE_DB
 
 
 class NXTSoundSensorInterface(SoundSensorInterface):
@@ -187,7 +188,7 @@ class LightSensorInterface(SensorInterface):
     def __init__(self, position: Position2D, address):
         SensorInterface.__init__(self, position)
         self.address = address
-        self.mode = 'REFLECT'
+        self.mode = LightSensor.MODE_REFLECT
 
 
 class NXTLightSensorInterface(LightSensorInterface):

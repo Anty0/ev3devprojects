@@ -35,8 +35,8 @@ def build_simulator(controller, *devices_interfaces: list) -> SimulatedEnvironme
 
 
 def _generate_base_ev3_devices(brick_center_position: Position2D):
-    left_led_position = brick_center_position.offset_by(Position2D(0, 0, 0))  # TODO: measure offset
-    right_led_position = brick_center_position.offset_by(Position2D(0, 0, 0))  # TODO: measure offset
+    left_led_position = brick_center_position.offset_by(Position2D(-0.8, -1.5, 0))
+    right_led_position = brick_center_position.offset_by(Position2D(0.8, -1.5, 0))
     return [
         interface.LedInterface(left_led_position, 'ev3:left:red:ev3dev'),
         interface.LedInterface(right_led_position, 'ev3:right:red:ev3dev'),

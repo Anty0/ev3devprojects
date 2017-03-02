@@ -70,23 +70,23 @@ class AutoDriveController(SimpleRobotProgramController):
             left_speed = crop_r(left_speed) * motor_speed
             right_speed = crop_r(right_speed) * motor_speed
 
-            # min_motor_power = self.get_config_value('MOTOR_POWER_MIN')
-            # if abs(left_speed) < min_motor_power and abs(right_speed) < min_motor_power:
-            #     if abs(left_speed) < abs(right_speed):
-            #         mul = min_motor_power / right_speed
-            #         left_speed *= mul
-            #         right_speed *= mul
-            #     else:
-            #         if right_speed == 0:
-            #             if left_speed == 0:
-            #                 left_speed = -min_motor_power
-            #                 right_speed = -min_motor_power
-            #             else:
-            #                 left_speed *= min_motor_power / left_speed
-            #         else:
-            #             mul = min_motor_power / left_speed
-            #             left_speed *= mul
-            #             right_speed *= mul
+            min_motor_power = self.get_config_value('MOTOR_POWER_MIN')
+            if abs(left_speed) < min_motor_power and abs(right_speed) < min_motor_power:
+                if abs(left_speed) < abs(right_speed):
+                    mul = min_motor_power / right_speed
+                    left_speed *= mul
+                    right_speed *= mul
+                else:
+                    if right_speed == 0:
+                        if left_speed == 0:
+                            left_speed = -min_motor_power
+                            right_speed = -min_motor_power
+                        else:
+                            left_speed *= min_motor_power / left_speed
+                    else:
+                        mul = min_motor_power / left_speed
+                        left_speed *= mul
+                        right_speed *= mul
 
             PILOT.update_duty_cycle_raw([left_speed, right_speed])  # TODO: rework to course
 

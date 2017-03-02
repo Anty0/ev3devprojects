@@ -45,9 +45,9 @@ SERVER_DATA_DIR = DATA_DIR + os.sep + 'html_data'
 
 
 # Robot
-ROBOT_WIDTH = 13
-ROBOT_LENGTH = 0  # TODO: measure
-ROBOT_HEIGHT = 0  # TODO: measure
+ROBOT_WIDTH = 15
+ROBOT_LENGTH = 23
+ROBOT_HEIGHT = 16
 ROBOT_WEIGHT = 0  # TODO: measure
 
 ROBOT_MOTOR_WHEEL_LEFT_PORT = OUTPUT_B
@@ -60,7 +60,7 @@ ROBOT_MOTOR_WHEEL_RIGHT_PORT = OUTPUT_C
 ROBOT_MOTOR_WHEEL_RIGHT_DIAMETER = 4.3
 ROBOT_MOTOR_WHEEL_RIGHT_WIDTH = 2.1
 ROBOT_MOTOR_WHEEL_RIGHT_OFFSET = 6.5
-ROBOT_MOTOR_WHEEL_RIGHT_GEAR_RATIO = 1
+ROBOT_MOTOR_WHEEL_RIGHT_GEAR_RATIO = 1  # -12/36
 
 ROBOT_MOTOR_SCANNER_PORT = OUTPUT_A
 ROBOT_MOTOR_SCANNER_GEAR_RATIO = 20 / 12
@@ -241,7 +241,7 @@ LINE_FOLLOWER_CONFIG_VALUES = config_values
 
 # Auto driver
 AUTO_DRIVER_MOTOR_SPEED = 40
-# AUTO_DRIVER_MOTOR_POWER_MIN = 20
+AUTO_DRIVER_MOTOR_POWER_MIN = 20
 AUTO_DRIVER_MOTOR_SCANNER_SIDE_DEGREES = 90
 
 config_values = odict()
@@ -250,11 +250,11 @@ config_values['MOTOR_SPEED'] = {
     'type': 'int',
     'default_value': AUTO_DRIVER_MOTOR_SPEED
 }
-# config_values['MOTOR_POWER_MIN'] = {
-#     'display_name': 'Min motor power',
-#     'type': 'int',
-#     'default_value': AUTO_DRIVER_MOTOR_POWER_MIN
-# }
+config_values['MOTOR_POWER_MIN'] = {
+    'display_name': 'Minimal motor power',
+    'type': 'int',
+    'default_value': AUTO_DRIVER_MOTOR_POWER_MIN
+}
 config_values['MOTOR_SCANNER_SIDE_DEGREES'] = {
     'display_name': 'Scanner left/right rotation degrees',
     'type': 'int',

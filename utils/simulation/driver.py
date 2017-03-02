@@ -1,8 +1,9 @@
-from ev3dev.auto import TouchSensor, ColorSensor, UltrasonicSensor
+from ev3dev.auto import TouchSensor, ColorSensor, UltrasonicSensor, GyroSensor, InfraredSensor, SoundSensor, LightSensor
 
 from .controller import Controller
 from .interface import DeviceInterface, MotorInterface, SensorInterface, TouchSensorInterface, ColorSensorInterface, \
-    UltrasonicSensorInterface
+    UltrasonicSensorInterface, GyroSensorInterface, InfraredSensorInterface, SoundSensorInterface, \
+    LightSensorInterface, LedInterface
 
 
 class DeviceDriver:
@@ -279,14 +280,13 @@ class TouchSensorDriver(SensorDriver):
     def value0(self):
         if self._mode == TouchSensor.MODE_TOUCH:
             return str(int(self._controller.is_pos_in_wall(self._position)))
-
         raise Exception()
 
 
 class ColorSensorDriver(SensorDriver):
     def __init__(self, controller: Controller, device_interface: ColorSensorInterface):
         SensorDriver.__init__(self, controller, device_interface)
-        self._commands = []  # TODO: extract from robot
+        self._commands = []
         self._modes = [ColorSensor.MODE_COL_REFLECT, ColorSensor.MODE_COL_AMBIENT, ColorSensor.MODE_COL_COLOR,
                        ColorSensor.MODE_REF_RAW, ColorSensor.MODE_RGB_RAW]
         self._decimals = {
@@ -323,7 +323,6 @@ class ColorSensorDriver(SensorDriver):
             return str(int(0))  # TODO: implement
         if self._mode == ColorSensor.MODE_RGB_RAW:
             return str(int(self._controller.get_color_rgb_on_pos(self._position)[0]))
-
         raise Exception()
 
     @property
@@ -332,14 +331,12 @@ class ColorSensorDriver(SensorDriver):
             return str(int(0))  # TODO: implement
         if self._mode == ColorSensor.MODE_RGB_RAW:
             return str(int(self._controller.get_color_rgb_on_pos(self._position)[1]))
-
         raise Exception()
 
     @property
     def value2(self):
         if self._mode == ColorSensor.MODE_RGB_RAW:
             return str(int(self._controller.get_color_rgb_on_pos(self._position)[2]))
-
         raise Exception()
 
 
@@ -347,7 +344,7 @@ class UltrasonicSensorDriver(SensorDriver):
     def __init__(self, controller: Controller, device_interface: UltrasonicSensorInterface):
         SensorDriver.__init__(self, controller, device_interface)
         ev3 = self._driver_name == 'lego-ev3-us'
-        self._commands = []  # TODO: extract from robot
+        self._commands = []
         self._modes = [UltrasonicSensor.MODE_US_DIST_CM, UltrasonicSensor.MODE_US_DIST_IN,
                        UltrasonicSensor.MODE_US_LISTEN, UltrasonicSensor.MODE_US_SI_CM, UltrasonicSensor.MODE_US_SI_IN]
         self._decimals = {
@@ -372,6 +369,7 @@ class UltrasonicSensorDriver(SensorDriver):
             UltrasonicSensor.MODE_US_SI_IN: 'in'
         }
         self._tmp_value = 0
+        self._on_mode_change(None, self._mode)
 
     def _on_mode_change(self, old_mode, new_mode):
         if new_mode == UltrasonicSensor.MODE_US_SI_CM or new_mode == UltrasonicSensor.MODE_US_SI_IN:
@@ -380,11 +378,11 @@ class UltrasonicSensorDriver(SensorDriver):
             self._tmp_value = 0
 
     @property
-    def value0(self):
+    def value0(self):  # TODO: crop distance values
         ev3 = self._driver_name == 'lego-ev3-us'
         if self._mode == UltrasonicSensor.MODE_US_DIST_CM:
-            return str(
-                int(self._controller.get_distance_on_pos(self._position) * (10 if ev3 else 1)))  # map must be in cm
+            return str(int(self._controller
+                           .get_distance_on_pos(self._position) * (10 if ev3 else 1)))  # map must be in cm
         if self._mode == UltrasonicSensor.MODE_US_DIST_IN:
             return str(int(self._controller.get_distance_on_pos(self._position) * 10))  # map must be in inch
         if self._mode == UltrasonicSensor.MODE_US_LISTEN:
@@ -393,12 +391,280 @@ class UltrasonicSensorDriver(SensorDriver):
             return str(int(self._tmp_value * (10 if ev3 else 1)))  # map must be in cm
         if self._mode == UltrasonicSensor.MODE_US_SI_IN:
             return str(int(self._tmp_value * 10))  # map must be in inch
-
         raise Exception()
 
 
 class GyroSensorDriver(SensorDriver):
-    pass  # TODO: complete implementations fo drivers
+    def __init__(self, controller: Controller, device_interface: GyroSensorInterface):
+        SensorDriver.__init__(self, controller, device_interface)
+        self._commands = []
+        self._modes = [GyroSensor.MODE_GYRO_ANG, GyroSensor.MODE_GYRO_RATE, GyroSensor.MODE_GYRO_FAS,
+                       GyroSensor.MODE_GYRO_G_A, GyroSensor.MODE_GYRO_CAL]
+        self._decimals = {
+            GyroSensor.MODE_GYRO_ANG: 0,
+            GyroSensor.MODE_GYRO_RATE: 0,
+            GyroSensor.MODE_GYRO_FAS: 0,
+            GyroSensor.MODE_GYRO_G_A: 0,
+            GyroSensor.MODE_GYRO_CAL: 0
+        }
+        self._num_values = {
+            GyroSensor.MODE_GYRO_ANG: 1,
+            GyroSensor.MODE_GYRO_RATE: 1,
+            GyroSensor.MODE_GYRO_FAS: 1,
+            GyroSensor.MODE_GYRO_G_A: 2,
+            GyroSensor.MODE_GYRO_CAL: 4
+        }
+        self._units = {
+            GyroSensor.MODE_GYRO_ANG: 'deg',
+            GyroSensor.MODE_GYRO_RATE: 'd/s',
+            GyroSensor.MODE_GYRO_FAS: None,
+            GyroSensor.MODE_GYRO_G_A: None,
+            GyroSensor.MODE_GYRO_CAL: None
+        }
+        self._start_angle = 0
+        self._on_mode_change(None, self._mode)
+
+    def _on_mode_change(self, old_mode, new_mode):
+        self._start_angle = self._controller.get_actual_pos().get_angle_deg()
+
+    @property
+    def value0(self):
+        if self._mode == GyroSensor.MODE_GYRO_ANG or self._mode == GyroSensor.MODE_GYRO_G_A:
+            return str(self._controller.get_actual_pos().get_angle_deg() - self._start_angle)
+        if self._mode == GyroSensor.MODE_GYRO_RATE:
+            return str(0)  # TODO: add support
+        if self._mode == GyroSensor.MODE_GYRO_FAS:
+            return str(0)  # TODO: add support
+        if self._mode == GyroSensor.MODE_GYRO_CAL:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value1(self):
+        if self._mode == GyroSensor.MODE_GYRO_G_A:
+            return str(0)  # TODO: add support
+        if self._mode == GyroSensor.MODE_GYRO_CAL:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value2(self):
+        if self._mode == GyroSensor.MODE_GYRO_CAL:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value3(self):
+        if self._mode == GyroSensor.MODE_GYRO_CAL:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+
+class InfraredSensorDriver(SensorDriver):
+    def __init__(self, controller: Controller, device_interface: InfraredSensorInterface):
+        SensorDriver.__init__(self, controller, device_interface)
+        self._commands = []
+        self._modes = [InfraredSensor.MODE_IR_PROX, InfraredSensor.MODE_IR_SEEK, InfraredSensor.MODE_IR_REMOTE,
+                       InfraredSensor.MODE_IR_REM_A, InfraredSensor.MODE_IR_CAL]
+        self._decimals = {
+            InfraredSensor.MODE_IR_PROX: 0,
+            InfraredSensor.MODE_IR_SEEK: 0,
+            InfraredSensor.MODE_IR_REMOTE: 0,
+            InfraredSensor.MODE_IR_REM_A: 0,
+            InfraredSensor.MODE_IR_CAL: 0
+        }
+        self._num_values = {
+            InfraredSensor.MODE_IR_PROX: 1,
+            InfraredSensor.MODE_IR_SEEK: 8,
+            InfraredSensor.MODE_IR_REMOTE: 4,
+            InfraredSensor.MODE_IR_REM_A: 1,
+            InfraredSensor.MODE_IR_CAL: 2
+        }
+        self._units = {
+            InfraredSensor.MODE_IR_PROX: 'pct',
+            InfraredSensor.MODE_IR_SEEK: 'pct',
+            InfraredSensor.MODE_IR_REMOTE: 'btn',
+            InfraredSensor.MODE_IR_REM_A: None,
+            InfraredSensor.MODE_IR_CAL: None
+        }
+
+    @property
+    def value0(self):  # TODO: crop distance values
+        if self._mode == InfraredSensor.MODE_IR_PROX:
+            return str(int(self._controller.get_distance_on_pos(self._position) / 70 * 100))
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(0)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_REMOTE:
+            return str(0)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_REM_A:
+            return str(0)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_CAL:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value1(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(-128)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_REMOTE:
+            return str(0)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_CAL:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value2(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(0)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_REMOTE:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value3(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(-128)  # TODO: add support
+        if self._mode == InfraredSensor.MODE_IR_REMOTE:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value4(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value5(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(-128)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value6(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+    @property
+    def value7(self):
+        if self._mode == InfraredSensor.MODE_IR_SEEK:
+            return str(-128)  # TODO: add support
+        raise Exception()
+
+
+class SoundSensorDriver(SensorDriver):
+    def __init__(self, controller: Controller, device_interface: SoundSensorInterface):
+        SensorDriver.__init__(self, controller, device_interface)
+        self._commands = []
+        self._modes = [SoundSensor.MODE_DB, SoundSensor.MODE_DBA]
+        self._decimals = {
+            SoundSensor.MODE_DB: 1,
+            SoundSensor.MODE_DBA: 1
+        }
+        self._num_values = {
+            SoundSensor.MODE_DB: 1,
+            SoundSensor.MODE_DBA: 1
+        }
+        self._units = {
+            SoundSensor.MODE_DB: 'pct',
+            SoundSensor.MODE_DBA: 'pct'
+        }
+
+    @property
+    def value0(self):
+        if self._mode == SoundSensor.MODE_DB:
+            return str(0)  # TODO: add support
+        if self._mode == SoundSensor.MODE_DBA:
+            return str(0)  # TODO: add support
+        raise Exception()
+
+
+class LightSensorDriver(SensorDriver):
+    def __init__(self, controller: Controller, device_interface: LightSensorInterface):
+        SensorDriver.__init__(self, controller, device_interface)
+        self._commands = []
+        self._modes = [LightSensor.MODE_REFLECT, LightSensor.MODE_AMBIENT]
+        self._decimals = {
+            LightSensor.MODE_REFLECT: 1,
+            LightSensor.MODE_AMBIENT: 1
+        }
+        self._num_values = {
+            LightSensor.MODE_REFLECT: 1,
+            LightSensor.MODE_AMBIENT: 1
+        }
+        self._units = {
+            LightSensor.MODE_REFLECT: 'pct',
+            LightSensor.MODE_AMBIENT: 'pct'
+        }
+
+    @property
+    def value0(self):
+        if self._mode == LightSensor.MODE_REFLECT:
+            return str(int(self._controller.get_reflect_on_pos(self._position) * 10))
+        if self._mode == LightSensor.MODE_AMBIENT:
+            return str(int(self._controller.get_light_on_pos(self._position) * 10))
+        raise Exception()
+
+
+class LedDriver(DeviceDriver):
+    def __init__(self, controller: Controller, device_interface: LedInterface):
+        DeviceDriver.__init__(self, controller, device_interface)
+        self._max_brightness = device_interface.max_brightness
+        self._brightness = device_interface.brightness
+        self._triggers = device_interface.triggers
+        self._trigger = ''
+        self._delay_on = device_interface.delay_on
+        self._delay_off = device_interface.delay_off
+
+    @property
+    def max_brightness(self):
+        return str(self._max_brightness)
+
+    @property
+    def brightness(self):
+        return str(self._brightness)
+
+    @brightness.setter
+    def brightness(self, value):
+        self._brightness = int(value)
+
+    @property
+    def triggers(self):
+        triggers_len = len(self._triggers)
+        if triggers_len == 0:
+            return ''
+        value = self._triggers[0]
+        for i in range(1, triggers_len):
+            value += ' ' + self._triggers[i]
+        return value
+
+    @property
+    def trigger(self):
+        return self._trigger
+
+    @trigger.setter
+    def trigger(self, value):
+        if value not in self._triggers:
+            raise Exception()
+        self._trigger = value
+        # TODO: apply trigger
+
+    @property
+    def delay_on(self):
+        return str(self._delay_on)
+
+    @delay_on.setter
+    def delay_on(self, value):
+        self._delay_on = int(value)
+
+    @property
+    def delay_off(self):
+        return str(self._delay_off)
+
+    @delay_off.setter
+    def delay_off(self, value):
+        self._delay_off = int(value)
 
 
 DRIVERS = {
@@ -411,12 +677,12 @@ DRIVERS = {
     'lego-sensor': SensorDriver,
     'lego-ev3-touch': TouchSensorDriver,
     'lego-nxt-touch': TouchSensorDriver,
-    'lego-ev3-color': None,  # TODO: implement
-    'lego-ev3-us': None,  # TODO: implement
-    'lego-nxt-us': None,  # TODO: implement
-    'lego-ev3-gyro': None,  # TODO: implement
-    'lego-ev3-ir': None,  # TODO: implement
-    'lego-nxt-sound': None,  # TODO: implement
-    'lego-nxt-light': None,  # TODO: implement
-    'lego-ev3-leds': None  # TODO: implement
+    'lego-ev3-color': ColorSensorDriver,
+    'lego-ev3-us': UltrasonicSensorDriver,
+    'lego-nxt-us': UltrasonicSensorDriver,
+    'lego-ev3-gyro': GyroSensorDriver,
+    'lego-ev3-ir': InfraredSensor,
+    'lego-nxt-sound': SoundSensorDriver,
+    'lego-nxt-light': LightSensorDriver,
+    'lego-ev3-leds': LedDriver  # TODO: extract driver name from robot
 }

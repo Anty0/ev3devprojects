@@ -273,6 +273,15 @@ class SimLed(Led, SimDevice):
         Led.__init__(self, address, name_pattern, name_exact, **kwargs)
         SimDevice.__init__(self, sim_environment, address, name_pattern, name_exact, **kwargs)
 
+    @property
+    def trigger(self):
+        self._trigger, value = self.get_attr_from_set(self._trigger, 'trigger')
+        return value
+
+    @trigger.setter
+    def trigger(self, value):
+        self._trigger = self.set_attr_string(self._trigger, 'trigger', value)
+
 
 class SimPowerSupply:  # placeholder
     pass  # TODO: add support

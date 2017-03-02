@@ -18,7 +18,29 @@ class Controller:
         self._map = surrounding_map
         self._position = start_position if start_position is not None else Position2D(0, 0, 0)
         self._wheels = []
+        self._sensors = []
+        self._leds = []
         self._odometry = None
+
+    def _register_led(self, led):
+        self._leds.append(led)
+
+    def register_led(self, led):
+        self._register_led(led)
+
+    def register_leds(self, leds: list):
+        for led in leds:
+            self._register_led(led)
+
+    def _register_sensor(self, sensor):
+        self._sensors.append(sensor)
+
+    def register_sensor(self, sensor):
+        self._register_sensor(sensor)
+
+    def register_sensors(self, sensors: list):
+        for sensor in sensors:
+            self._register_sensor(sensor)
 
     def _register_wheel(self, wheel):
         self._wheels.append(wheel)
