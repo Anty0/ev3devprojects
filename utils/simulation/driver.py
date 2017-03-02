@@ -681,7 +681,7 @@ DRIVERS = {
     'lego-ev3-us': UltrasonicSensorDriver,
     'lego-nxt-us': UltrasonicSensorDriver,
     'lego-ev3-gyro': GyroSensorDriver,
-    'lego-ev3-ir': InfraredSensor,
+    'lego-ev3-ir': InfraredSensorDriver,
     'lego-nxt-sound': SoundSensorDriver,
     'lego-nxt-light': LightSensorDriver,
     'lego-ev3-leds': LedDriver  # TODO: extract driver name from robot

@@ -38,14 +38,14 @@ def _generate_base_ev3_devices(brick_center_position: Position2D):
     left_led_position = brick_center_position.offset_by(Position2D(-0.8, -1.5, 0))
     right_led_position = brick_center_position.offset_by(Position2D(0.8, -1.5, 0))
     return [
-        interface.LedInterface(left_led_position, 'ev3:left:red:ev3dev'),
-        interface.LedInterface(right_led_position, 'ev3:right:red:ev3dev'),
-        interface.LedInterface(left_led_position, 'ev3:left:green:ev3dev'),
-        interface.LedInterface(right_led_position, 'ev3:right:green:ev3dev')
+        interface.EV3LedInterface(left_led_position, 'ev3:left:red:ev3dev'),
+        interface.EV3LedInterface(right_led_position, 'ev3:right:red:ev3dev'),
+        interface.EV3LedInterface(left_led_position, 'ev3:left:green:ev3dev'),
+        interface.EV3LedInterface(right_led_position, 'ev3:right:green:ev3dev')
     ]
 
 
 def build_ev3_simulator(controller, brick_center_position: Position2D,
                         *additional_devices_interfaces: list) -> SimulatedEnvironment:
-    return build_simulator(controller, *(_generate_base_ev3_devices(brick_center_position)
-                                         + additional_devices_interfaces))
+    devices_interfaces = list(_generate_base_ev3_devices(brick_center_position)) + list(additional_devices_interfaces)
+    return build_simulator(controller, *devices_interfaces)

@@ -33,7 +33,7 @@ root.addHandler(ch)
 log = logging.getLogger(__name__)
 
 # Other
-SIMULATION_MODE = False
+SIMULATION_MODE = '--simulate' in sys.argv or '-s' in sys.argv
 ENABLE_SOUNDS = True
 DATA_DIR = os.curdir + os.sep + 'data'
 
@@ -49,6 +49,9 @@ ROBOT_WIDTH = 15
 ROBOT_LENGTH = 23
 ROBOT_HEIGHT = 16
 ROBOT_WEIGHT = 0  # TODO: measure
+
+ROBOT_BRICK_POSITION_X = 0
+ROBOT_BRICK_POSITION_Y = -5
 
 ROBOT_MOTOR_WHEEL_LEFT_PORT = OUTPUT_B
 ROBOT_MOTOR_WHEEL_LEFT_DIAMETER = 4.3

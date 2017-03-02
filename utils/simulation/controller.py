@@ -5,11 +5,11 @@ from utils.position import Position2D
 
 
 class RobotInfo:
-    pass
+    pass  # TODO: implement
 
 
 class Map:
-    pass
+    pass  # TODO: implement, own file
 
 
 class Controller:
@@ -28,7 +28,7 @@ class Controller:
     def register_led(self, led):
         self._register_led(led)
 
-    def register_leds(self, leds: list):
+    def register_leds(self, *leds):
         for led in leds:
             self._register_led(led)
 
@@ -38,7 +38,7 @@ class Controller:
     def register_sensor(self, sensor):
         self._register_sensor(sensor)
 
-    def register_sensors(self, sensors: list):
+    def register_sensors(self, *sensors):
         for sensor in sensors:
             self._register_sensor(sensor)
 
@@ -49,7 +49,7 @@ class Controller:
         self._register_wheel(wheel)
         self._start_odometry()
 
-    def register_wheels(self, wheels: list):
+    def register_wheels(self, *wheels):
         for wheel in wheels:
             self._register_wheel(wheel)
         self._start_odometry()

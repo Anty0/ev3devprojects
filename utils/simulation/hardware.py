@@ -1,4 +1,4 @@
-import re
+import fnmatch
 import time
 
 from ev3dev.auto import Device, Motor, LargeMotor, MediumMotor, \
@@ -17,11 +17,11 @@ class SimAttribute:
     def seek(self, some_useless_param):
         pass
 
-    def read(self) -> str:
-        return str(getattr(self._device, self._attr_name))
+    def read(self) -> bytes:
+        return str(getattr(self._device, self._attr_name)).encode()
 
-    def write(self, text_input: str):
-        setattr(self._device, self._attr_name, text_input)
+    def write(self, text_input: bytes):
+        setattr(self._device, self._attr_name, text_input.decode())
 
     def flush(self):
         pass
@@ -45,9 +45,8 @@ def list_sim_device_names(sim_environment, class_name, name_pattern, **kwargs):
         else:
             return value.find(pattern) >= 0
 
-    pattern = re.compile(name_pattern)
     for device_name in environment_class.keys():
-        if pattern.match(device_name):
+        if fnmatch.fnmatch(device_name, name_pattern):
             if all([matches(device_name, k, kwargs[k]) for k in kwargs]):
                 yield device_name
 
@@ -63,16 +62,17 @@ class SimDevice(Device):
             else:
                 return None
 
+        environment = sim_environment.get_environment()
         if name_exact:
             self._path = '/' + class_name + '/' + name_pattern
-            self._device = sim_environment[class_name][name_pattern]
+            self._device = environment[class_name][name_pattern]
             self._device_index = get_index(name_pattern)
             self.connected = True
         else:
             try:
                 name = next(list_sim_device_names(sim_environment, class_name, name_pattern, **kwargs))
                 self._path = '/' + class_name + '/' + name_pattern
-                self._device = sim_environment[class_name][name]
+                self._device = environment[class_name][name]
                 self._device_index = get_index(name)
                 self.connected = True
             except StopIteration:
@@ -89,12 +89,11 @@ def list_sim_devices(sim_environment, class_name, name_pattern, **kwargs):
             for name in list_sim_device_names(sim_environment, class_name, name_pattern, **kwargs))
 
 
-class SimMotor(Motor, SimDevice):
+class SimMotor(SimDevice, Motor):
     def __init__(self, sim_environment, address=None, name_pattern=Motor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         Motor.__init__(self, address, name_pattern, name_exact, **kwargs)
-        SimDevice.__init__(self, sim_environment, self.SYSTEM_CLASS_NAME,
-                           name_pattern, name_exact, **kwargs)
+        SimDevice.__init__(self, sim_environment, self.SYSTEM_CLASS_NAME, name_pattern, name_exact, **kwargs)
 
     @property
     def position_p(self):
@@ -162,7 +161,7 @@ def list_sim_motors(sim_environment, name_pattern=Motor.SYSTEM_DEVICE_NAME_CONVE
                                               Motor.SYSTEM_CLASS_NAME, name_pattern, **kwargs))
 
 
-class SimLargeMotor(LargeMotor, SimMotor):
+class SimLargeMotor(SimMotor, LargeMotor):
     def __init__(self, sim_environment, address=None, name_pattern=LargeMotor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         LargeMotor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -170,7 +169,7 @@ class SimLargeMotor(LargeMotor, SimMotor):
                           driver_name=['lego-ev3-l-motor', 'lego-nxt-motor'], **kwargs)
 
 
-class SimMediumMotor(MediumMotor, SimMotor):
+class SimMediumMotor(SimMotor, MediumMotor):
     def __init__(self, sim_environment, address=None, name_pattern=MediumMotor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         MediumMotor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -194,7 +193,7 @@ class SimServoMotor:  # placeholder
     pass  # TODO: add support
 
 
-class SimSensor(Sensor, SimDevice):
+class SimSensor(SimDevice, Sensor):
     def __init__(self, sim_environment, address=None, name_pattern=Sensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         Sensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -211,7 +210,7 @@ class SimI2cSensor:  # placeholder
     pass  # TODO: add support
 
 
-class SimTouchSensor(TouchSensor, SimSensor):
+class SimTouchSensor(SimSensor, TouchSensor):
     def __init__(self, sim_environment, address=None, name_pattern=TouchSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         TouchSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -219,7 +218,7 @@ class SimTouchSensor(TouchSensor, SimSensor):
                            driver_name=['lego-ev3-touch', 'lego-nxt-touch'], **kwargs)
 
 
-class SimColorSensor(ColorSensor, SimSensor):
+class SimColorSensor(SimSensor, ColorSensor):
     def __init__(self, sim_environment, address=None, name_pattern=ColorSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         ColorSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -227,7 +226,7 @@ class SimColorSensor(ColorSensor, SimSensor):
                            driver_name=['lego-ev3-color'], **kwargs)
 
 
-class SimUltrasonicSensor(UltrasonicSensor, SimSensor):
+class SimUltrasonicSensor(SimSensor, UltrasonicSensor):
     def __init__(self, sim_environment, address=None, name_pattern=UltrasonicSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         UltrasonicSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -235,7 +234,7 @@ class SimUltrasonicSensor(UltrasonicSensor, SimSensor):
                            driver_name=['lego-ev3-us', 'lego-nxt-us'], **kwargs)
 
 
-class SimGyroSensor(GyroSensor, SimSensor):
+class SimGyroSensor(SimSensor, GyroSensor):
     def __init__(self, sim_environment, address=None, name_pattern=GyroSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         GyroSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -243,7 +242,7 @@ class SimGyroSensor(GyroSensor, SimSensor):
                            driver_name=['lego-ev3-gyro'], **kwargs)
 
 
-class SimInfraredSensor(InfraredSensor, SimSensor):
+class SimInfraredSensor(SimSensor, InfraredSensor):
     def __init__(self, sim_environment, address=None, name_pattern=InfraredSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         InfraredSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -251,7 +250,7 @@ class SimInfraredSensor(InfraredSensor, SimSensor):
                            driver_name=['lego-ev3-ir'], **kwargs)
 
 
-class SimSoundSensor(SoundSensor, SimSensor):
+class SimSoundSensor(SimSensor, SoundSensor):
     def __init__(self, sim_environment, address=None, name_pattern=SoundSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         SoundSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -259,7 +258,7 @@ class SimSoundSensor(SoundSensor, SimSensor):
                            driver_name=['lego-nxt-sound'], **kwargs)
 
 
-class SimLightSensor(LightSensor, SimSensor):
+class SimLightSensor(SimSensor, LightSensor):
     def __init__(self, sim_environment, address=None, name_pattern=LightSensor.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         LightSensor.__init__(self, address, name_pattern, name_exact, **kwargs)
@@ -267,7 +266,7 @@ class SimLightSensor(LightSensor, SimSensor):
                            driver_name=['lego-nxt-light'], **kwargs)
 
 
-class SimLed(Led, SimDevice):
+class SimLed(SimDevice, Led):
     def __init__(self, sim_environment, address=None, name_pattern=Led.SYSTEM_DEVICE_NAME_CONVENTION,
                  name_exact=False, **kwargs):
         Led.__init__(self, address, name_pattern, name_exact, **kwargs)
