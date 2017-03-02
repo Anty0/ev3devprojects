@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import math
+import time
 
-import config as _config
-from hardware import *
+from config import ROBOT_WIDTH, LINE_FOLLOWER_CONFIG_VALUES
+from hardware import PILOT, COLOR_SENSOR, HAS_COLOR_SENSOR, SCANNER, reset_hardware
 from utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
-from utils.regulator import *
-from utils.robot_program import *
+from utils.regulator import PercentRegulator
+from utils.robot_program import RobotProgram, SimpleRobotProgramController, ControllerConfigWrapper
+from utils.utils import crop_r, crop_m, wait_to_cycle_time
 
 
 class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
@@ -39,7 +41,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
             if change < 5:
                 return False
 
-            last_time = utils.wait_to_cycle_time(last_time, cycle_time)
+            last_time = wait_to_cycle_time(last_time, cycle_time)
 
         return False
 
@@ -62,7 +64,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         while not self.controller.stop:
             distance_val = SCANNER.value_scan(0)
             power = self._power_regulator.regulate(-distance_val)
-            PILOT.update_duty_cycle(0, utils.crop_m(power, max_out=0))
+            PILOT.update_duty_cycle(0, crop_m(power, max_out=0))
 
             if distance_val > self._get_target_distance():
                 PILOT.stop()
@@ -110,7 +112,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
                 PILOT.run_direct()
                 last_time = time.time()
 
-            last_time = utils.wait_to_cycle_time(last_time, cycle_time)
+            last_time = wait_to_cycle_time(last_time, cycle_time)
         pass
 
 
@@ -298,7 +300,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
 
         read_val = COLOR_SENSOR.value()
         read_percent = 100 * (read_val - min_reflect) / (max_reflect - min_reflect)
-        course = utils.crop_r(self._steer_regulator.regulate(read_percent) * line_side)
+        course = crop_r(self._steer_regulator.regulate(read_percent) * line_side)
 
         if self._test_sharp_turn(min_reflect, max_reflect, target_power, target_cycle_time) \
                 or self._test_stop_on_line_end():
@@ -310,7 +312,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
             target_power_mul = 1
         PILOT.update_duty_cycle(course, target_power * target_power_mul)
 
-        self._last_time = utils.wait_to_cycle_time(self._last_time, target_cycle_time)
+        self._last_time = wait_to_cycle_time(self._last_time, target_cycle_time)
 
 
 class LineFollowController(SimpleRobotProgramController, BehaviourController):
@@ -377,7 +379,7 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
 
 class LineFollowRobotProgram(RobotProgram):
     def __init__(self):
-        super().__init__('LineFollower', _config.LINE_FOLLOWER_CONFIG_VALUES)
+        super().__init__('LineFollower', LINE_FOLLOWER_CONFIG_VALUES)
 
     def execute(self, config=None) -> LineFollowController:
         if not PILOT.is_connected() or not HAS_COLOR_SENSOR:

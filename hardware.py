@@ -1,8 +1,9 @@
-from ev3dev.auto import *
+from ev3dev.auto import LargeMotor, MediumMotor, ColorSensor
 
 from config import *
-from utils.pilot import Pilot, Wheel
+from utils.pilot import Pilot
 from utils.scanner import Scanner, ScannerPropulsion
+from utils.wheel import Wheel
 
 LEFT_WHEEL = Wheel(LargeMotor(ROBOT_MOTOR_WHEEL_LEFT_PORT), ROBOT_MOTOR_WHEEL_LEFT_GEAR_RATIO,
                    ROBOT_MOTOR_WHEEL_LEFT_DIAMETER, ROBOT_MOTOR_WHEEL_LEFT_WIDTH, ROBOT_MOTOR_WHEEL_LEFT_OFFSET)

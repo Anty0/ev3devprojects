@@ -2,11 +2,12 @@
 
 import math
 import threading
+import time
 
-import config as _config
-from hardware import *
-from utils import utils
-from utils.robot_program import *
+from config import AUTO_DRIVER_CONFIG_VALUES
+from hardware import PILOT, SCANNER, reset_hardware
+from utils.robot_program import RobotProgram, SimpleRobotProgramController
+from utils.utils import crop_r
 
 
 class AutoDriveController(SimpleRobotProgramController):
@@ -66,8 +67,8 @@ class AutoDriveController(SimpleRobotProgramController):
                 left_speed, right_speed = right_speed, left_speed
 
             motor_speed = self.get_config_value('MOTOR_SPEED') / 100
-            left_speed = utils.crop_r(left_speed) * motor_speed
-            right_speed = utils.crop_r(right_speed) * motor_speed
+            left_speed = crop_r(left_speed) * motor_speed
+            right_speed = crop_r(right_speed) * motor_speed
 
             # min_motor_power = self.get_config_value('MOTOR_POWER_MIN')
             # if abs(left_speed) < min_motor_power and abs(right_speed) < min_motor_power:
@@ -123,9 +124,9 @@ class AutoDriveController(SimpleRobotProgramController):
 
 class AutoDriveRobotProgram(RobotProgram):
     def __init__(self):
-        super().__init__('AutoDrive', _config.AUTO_DRIVER_CONFIG_VALUES)
+        super().__init__('AutoDrive', AUTO_DRIVER_CONFIG_VALUES)
 
-    def execute(self, config=None) -> RobotProgramController:
+    def execute(self, config=None) -> AutoDriveController:
         if not PILOT.is_connected() or not SCANNER.is_connected() or not SCANNER.has_motor():
             raise Exception('AutoDrive requires wheels and rotating scanner.')
         return AutoDriveController(self, config)

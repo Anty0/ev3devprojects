@@ -1,7 +1,9 @@
-from ev3dev.auto import *
+import time
 
-from utils import utils
+from ev3dev.auto import OUTPUT_B, OUTPUT_C, LargeMotor
+
 from utils.regulator import ValueRegulator
+from utils.utils import crop_r, wait_to_cycle_time
 
 SPEED = 360
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
@@ -17,8 +19,8 @@ try:
     LEFT_MOTOR.run_direct(duty_cycle_sp=0)
     last_time = time.time()
     while True:
-        LEFT_MOTOR.duty_cycle_sp = utils.crop_r(regulator.regulate(LEFT_MOTOR.position))
-        last_time = utils.wait_to_cycle_time(last_time, 0.05)
+        LEFT_MOTOR.duty_cycle_sp = crop_r(regulator.regulate(LEFT_MOTOR.position))
+        last_time = wait_to_cycle_time(last_time, 0.05)
 except KeyboardInterrupt:
     pass
 

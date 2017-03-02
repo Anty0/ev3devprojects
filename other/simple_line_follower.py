@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-from ev3dev.auto import *
+import time
+
+from ev3dev.auto import OUTPUT_B, OUTPUT_C, LargeMotor, ColorSensor, UltrasonicSensor
 
 ROBOT_MOTOR_WHEELS_LEFT_PORT = OUTPUT_C
 ROBOT_MOTOR_WHEELS_RIGHT_PORT = OUTPUT_B

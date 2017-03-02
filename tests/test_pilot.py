@@ -1,6 +1,7 @@
-from ev3dev.auto import *
+from ev3dev.auto import OUTPUT_B, OUTPUT_C, LargeMotor
 
-from utils.pilot import Pilot, Wheel
+from utils.pilot import Pilot
+from utils.wheel import Wheel
 
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
 RIGHT_MOTOR = LargeMotor(OUTPUT_C)

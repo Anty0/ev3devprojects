@@ -1,9 +1,12 @@
-from ev3dev.auto import *
+import time
+
+from ev3dev.auto import OUTPUT_A, OUTPUT_B, OUTPUT_C, LargeMotor, MediumMotor
 
 from utils import utils
-from utils.pilot import Pilot, Wheel
+from utils.pilot import Pilot
 from utils.regulator import PercentRegulator
 from utils.scanner import Scanner, ScannerPropulsion
+from utils.wheel import Wheel
 
 LEFT_MOTOR = LargeMotor(OUTPUT_B)
 RIGHT_MOTOR = LargeMotor(OUTPUT_C)

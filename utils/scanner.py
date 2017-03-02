@@ -1,4 +1,6 @@
-from ev3dev.auto import *
+import time
+
+from ev3dev.auto import Motor, InfraredSensor, UltrasonicSensor
 
 
 class ScannerPropulsion:

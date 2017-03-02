@@ -1,4 +1,4 @@
-from utils import utils
+from .utils import crop_r
 
 
 class RegulatorBase:
@@ -71,7 +71,7 @@ class PercentRegulator(ValueRegulator):
                                 getter_p, getter_i, getter_d, getter_target)
 
     def regulate(self, input_val):
-        input_val = utils.crop_r(input_val)
+        input_val = crop_r(input_val)
         target = self._get_target()
         max_positive_error = abs(100 - target) * 0.6
         max_negative_error = abs(-target) * 0.6

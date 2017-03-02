@@ -1,27 +1,12 @@
 import logging
 import math
+import time
 
-from ev3dev.auto import *
-
-from utils import utils
 from utils.coordinator import Action, CycleThreadCoordinator
 from utils.regulator import ValueRegulator
+from .utils import crop_r
 
 log = logging.getLogger(__name__)
-
-
-class Wheel:
-    def __init__(self, motor: Motor, gear_ratio: float, diameter: float,
-                 width: float, offset: float):
-        self.motor = motor
-        self.diameter = diameter
-        self.width = width
-        self.offset = offset
-
-        self.gear_ratio = gear_ratio
-        self.motor_tacho_ratio = motor.count_per_rot / 360 if motor.connected else 1
-        self.total_ratio = self.gear_ratio * self.motor_tacho_ratio
-        self.unit_ratio = 360 / (math.pi * self.diameter)
 
 
 _REG_SPEED_P = 1
@@ -40,7 +25,7 @@ class MotorAction(Action):
         self.wheel = wheel
         self._motor = wheel.motor
         self._speed = speed
-        self._max_duty_cycle = utils.crop_r(max_duty_cycle, 100)
+        self._max_duty_cycle = crop_r(max_duty_cycle, 100)
 
         self._elapsed_time = time.time()
         self._start_position = self._motor.position
@@ -85,8 +70,8 @@ class MotorAction(Action):
         # duty_cycle += self._error_regulator.regulate(-progress_error * self.speed)
         # self._motor.duty_cycle_sp = utils.crop_r(duty_cycle, self._max_duty_cycle)
 
-        self._motor.duty_cycle_sp = utils.crop_r(self._speed_regulator.regulate(self._motor.position),
-                                                 self._max_duty_cycle)
+        self._motor.duty_cycle_sp = crop_r(self._speed_regulator.regulate(self._motor.position),
+                                           self._max_duty_cycle)
 
     def on_stop(self):
         self._motor.stop()
@@ -172,7 +157,7 @@ class DriveCoordinator(CycleThreadCoordinator):
 
 
 class Pilot:
-    def __init__(self, wheels: array):
+    def __init__(self, wheels: list):
         self._running_coordinator = None
         self._wheels = []
         self._has_wheels = False
@@ -188,7 +173,7 @@ class Pilot:
     def is_connected(self):
         return self._has_wheels
 
-    def set_wheels(self, wheels: array):
+    def set_wheels(self, wheels: list):
         self.stop()
         self.wait_to_stop()
 
@@ -415,26 +400,26 @@ class Pilot:
                            else self._max_speed_unit),
                            max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_timed(self, time_len: float, speeds_tacho: array = None, max_duty_cycle: int = 100, async: bool = False):
+    def run_timed(self, time_len: float, speeds_tacho: list = None, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_tacho(time_len=time_len, speeds_tacho=speeds_tacho,
                             max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_forever(self, speeds_tacho: array = None, max_duty_cycle: int = 100, async: bool = False):
+    def run_forever(self, speeds_tacho: list = None, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_tacho(speeds_tacho=speeds_tacho, max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_deg_timed(self, time_len: float, speeds_deg: array = None, max_duty_cycle: int = 100, async: bool = False):
+    def run_deg_timed(self, time_len: float, speeds_deg: list = None, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_deg(time_len=time_len, speeds_deg=speeds_deg,
                           max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_deg_forever(self, speeds_deg: array = None, max_duty_cycle: int = 100, async: bool = False):
+    def run_deg_forever(self, speeds_deg: list = None, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_deg(speeds_deg=speeds_deg, max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_unit_timed(self, time_len: float, speeds_unit: array = None, max_duty_cycle: int = 100,
+    def run_unit_timed(self, time_len: float, speeds_unit: list = None, max_duty_cycle: int = 100,
                        async: bool = False):
         self._raw_run_unit(time_len=time_len, speeds_unit=speeds_unit,
                            max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_unit_forever(self, speeds_unit: array = None, max_duty_cycle: int = 100, async: bool = False):
+    def run_unit_forever(self, speeds_unit: list = None, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_unit(speeds_unit=speeds_unit, max_duty_cycle=max_duty_cycle, async=async)
 
     def run_drive_forever(self, course_r: float, speed_unit: float = None, max_duty_cycle: int = 100,
@@ -493,7 +478,7 @@ class Pilot:
         for wheel in self._wheels:
             wheel.stop_action = stop_action
 
-    def restore_positions(self, positions: array, speed_unit=None):
+    def restore_positions(self, positions: list, speed_unit=None):
         if speed_unit is None:
             speed_unit = self._max_speed_unit
         speed_tacho = self._speeds_deg_to_tacho(self._speeds_unit_to_deg([speed_unit]))[0]

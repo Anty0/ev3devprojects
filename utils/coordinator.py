@@ -1,7 +1,7 @@
 import time
 from threading import Thread
 
-from utils import utils
+from .utils import wait_to_cycle_time
 
 
 class Action:
@@ -90,4 +90,4 @@ class CycleThreadCoordinator(ThreadCoordinator):
 
     def handle_loop(self):
         ThreadCoordinator.handle_loop(self)
-        self._last_time = utils.wait_to_cycle_time(self._last_time, self._cycle_time)
+        self._last_time = wait_to_cycle_time(self._last_time, self._cycle_time)
