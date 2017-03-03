@@ -2,14 +2,11 @@ import math
 from threading import Thread
 
 from utils.position import Position2D
+from .map import Map
 
 
 class RobotInfo:
     pass  # TODO: implement
-
-
-class Map:
-    pass  # TODO: implement, own file
 
 
 class Controller:

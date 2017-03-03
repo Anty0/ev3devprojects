@@ -25,15 +25,18 @@ class ScannerHead:
             self.distance_sensor = ultrasonic_sensor
             self.has_distance_sensor = True
             self.max_distance = 255 if ultrasonic_sensor.driver_name is not 'lego-ev3-us' else 2550
+            self.to_cm_mul = 1 if ultrasonic_sensor.driver_name is not 'lego-ev3-us' else 0.1
         elif ir_sensor.connected:
             ir_sensor.mode = 'IR-PROX'
             self.distance_sensor = ir_sensor
             self.has_distance_sensor = True
             self.max_distance = 100
+            self.to_cm_mul = 0.7
         else:
             self.distance_sensor = None
             self.has_distance_sensor = False
             self.max_distance = -1
+            self.to_cm_mul = 0
 
 
 class Scanner:
@@ -66,7 +69,7 @@ class Scanner:
         return 'running' in self._scanner_propulsion.motor.state
 
     def value_max(self):
-        return self._scanner_head.max_distance
+        return self._scanner_head.max_distance * self._scanner_head.to_cm_mul
 
     def repeat_while_scanner_running(self, method):
         while self.is_running():
@@ -78,7 +81,7 @@ class Scanner:
     def value_get(self, percent=True):
         if percent:
             return self._scanner_head.distance_sensor.value() / self._scanner_head.max_distance * 100
-        return self._scanner_head.distance_sensor.value()
+        return self._scanner_head.distance_sensor.value() * self._scanner_head.to_cm_mul
 
     def angle_get(self):
         return self._scanner_propulsion.motor.position / self._scanner_propulsion.total_ratio
