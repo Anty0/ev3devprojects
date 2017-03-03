@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 # Other
 SIMULATION_MODE = '--simulate' in sys.argv or '-s' in sys.argv
-ENABLE_SOUNDS = True
+ENABLE_SOUNDS = not SIMULATION_MODE
 DATA_DIR = os.curdir + os.sep + 'data'
 
 
