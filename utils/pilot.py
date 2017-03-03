@@ -170,6 +170,7 @@ class Pilot:
 
         self.set_wheels(wheels)
 
+    @property
     def is_connected(self):
         return self._has_wheels
 

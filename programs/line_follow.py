@@ -4,7 +4,7 @@ import math
 import time
 
 from config import ROBOT_WIDTH, LINE_FOLLOWER_CONFIG_VALUES
-from hardware import PILOT, COLOR_SENSOR, HAS_COLOR_SENSOR, SCANNER, reset_hardware
+from hardware import PILOT, COLOR_SENSOR_READER, HAS_COLOR_SENSOR, SCANNER, reset_hardware
 from utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
 from utils.regulator import PercentRegulator
 from utils.robot_program import RobotProgram, SimpleRobotProgramController, ControllerConfigWrapper
@@ -44,7 +44,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
             if change < 5:
                 return False
 
-            last_time = wait_to_cycle_time(last_time, cycle_time)
+            last_time = wait_to_cycle_time(__name__, last_time, cycle_time)
 
         return False
 
@@ -115,7 +115,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
                 PILOT.run_direct()
                 last_time = time.time()
 
-            last_time = wait_to_cycle_time(last_time, cycle_time)
+            last_time = wait_to_cycle_time(__name__, last_time, cycle_time)
         pass
 
 
@@ -177,17 +177,17 @@ class ObstacleAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         PILOT.run_percent_drive_forever(0, speed_unit=target_speed)
         SCANNER.rotate_scanner_to_pos(0)
 
-        while 100 * (COLOR_SENSOR.value() - min_reflect) / (max_reflect - min_reflect) > target_reflect:
+        while 100 * (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) > target_reflect:
             time.sleep(wait_time)
 
         PILOT.run_percent_drive_forever(course, speed_unit=target_speed)
 
-        while 100 * (COLOR_SENSOR.value() - min_reflect) / (max_reflect - min_reflect) <= target_reflect:
+        while 100 * (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) <= target_reflect:
             time.sleep(wait_time)
 
         time.sleep(wait_time * 4)
 
-        while 100 * (COLOR_SENSOR.value() - min_reflect) / (max_reflect - min_reflect) > target_reflect:
+        while 100 * (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) > target_reflect:
             time.sleep(wait_time)
 
         PILOT.stop()
@@ -202,7 +202,7 @@ class ObstacleDetectionBehaviour(MultiBehaviour, ControllerConfigWrapper):
         ])
 
     def should_take_control(self) -> bool:
-        if not SCANNER.is_connected() or not SCANNER.has_motor() or SCANNER.is_running() \
+        if not SCANNER.is_connected or not SCANNER.has_motor or SCANNER.is_running \
                 or (not self.get_config_value('OBSTACLE_AVOID') and not self.get_config_value('COLLISION_AVOID')):
             return False
 
@@ -264,20 +264,20 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         return self._last_power
 
     def _test_sharp_turn(self, min_reflect, max_reflect, target_power, target_cycle_time) -> bool:
-        if not self.get_config_value('SHARP_TURN_DETECT') or not self._steer_regulator.last_derivative > 25:
+        if not self.get_config_value('SHARP_TURN_DETECT') or not abs(self._steer_regulator.last_derivative) > 75:
             # TODO: test and add to config
             return False
 
         side = self.get_config_value('SHARP_TURN_ROTATE_SIDE')
         target_reflect = self.get_config_value('TARGET_REFLECT')
-        PILOT.update_duty_cycle(50 * side, target_power)
+        PILOT.update_duty_cycle(100 * side, target_power)
 
-        while 100 * (COLOR_SENSOR.value() - min_reflect) / (max_reflect - min_reflect) <= target_reflect:
+        while (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) * 100 <= target_reflect:
             time.sleep(target_cycle_time)
 
         time.sleep(target_cycle_time)
 
-        while 100 * (COLOR_SENSOR.value() - min_reflect) / (max_reflect - min_reflect) > target_reflect:
+        while (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) * 100 > target_reflect:
             time.sleep(target_cycle_time)
 
         self.reset_regulation()
@@ -301,7 +301,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         power_adaptation = self.get_config_value('POWER_ADAPTATION')
         target_power = self._next_power(target_cycle_time)
 
-        read_val = COLOR_SENSOR.value()
+        read_val = COLOR_SENSOR_READER.value()
         read_percent = 100 * (read_val - min_reflect) / (max_reflect - min_reflect)
         course = crop_r(self._steer_regulator.regulate(read_percent) * line_side)
 
@@ -309,13 +309,16 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
                 or self._test_stop_on_line_end():
             return
 
+        # if ENABLE_SOUNDS:
+        #     SOUND.beep([(int(course + 200), int(target_cycle_time * 1000))])
+
         if power_adaptation:
             target_power_mul = (1 / (1 + math.pow(abs(self._steer_regulator.last_integral) / 25, 3))) * 0.8 + 0.2
         else:
             target_power_mul = 1
         PILOT.update_duty_cycle(course, target_power * target_power_mul)
 
-        self._last_time = wait_to_cycle_time(self._last_time, target_cycle_time)
+        self._last_time = wait_to_cycle_time(__name__, self._last_time, target_cycle_time)
 
 
 class LineFollowController(SimpleRobotProgramController, BehaviourController):
@@ -336,9 +339,10 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
 
     @staticmethod
     def _scan_min_max_reflect(reflect):
-        read = COLOR_SENSOR.value()
+        read = COLOR_SENSOR_READER.value()
         reflect[0] = min(reflect[0], read)
         reflect[1] = max(reflect[1], read)
+        time.sleep(0)
 
     def on_start(self):
         reflect = [None, None]
@@ -388,7 +392,7 @@ class LineFollowRobotProgram(RobotProgram):
         super().__init__('LineFollower', LINE_FOLLOWER_CONFIG_VALUES)
 
     def execute(self, config=None) -> LineFollowController:
-        if not PILOT.is_connected() or not HAS_COLOR_SENSOR:
+        if not PILOT.is_connected or not HAS_COLOR_SENSOR:
             raise Exception('LineFollower requires wheels and color sensor at last.')
         return LineFollowController(self, config)
 

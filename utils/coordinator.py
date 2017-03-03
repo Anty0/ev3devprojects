@@ -90,4 +90,4 @@ class CycleThreadCoordinator(ThreadCoordinator):
 
     def handle_loop(self):
         ThreadCoordinator.handle_loop(self)
-        self._last_time = wait_to_cycle_time(self._last_time, self._cycle_time)
+        self._last_time = wait_to_cycle_time(__name__, self._last_time, self._cycle_time)

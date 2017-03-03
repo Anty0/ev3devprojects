@@ -2,8 +2,10 @@ import time
 
 from ev3dev.auto import Motor, InfraredSensor, UltrasonicSensor
 
+from utils.value_reader import ValueReader
 
-class ScannerPropulsion:
+
+class DistanceScannerPropulsion:
     def __init__(self, motor: Motor, gear_ratio: float):
         self.motor = motor
         self.connected = motor.connected
@@ -13,7 +15,7 @@ class ScannerPropulsion:
         self.total_ratio = self.gear_ratio * self.motor_tacho_ratio
 
 
-class ScannerHead:
+class DistanceScannerHead:
     def __init__(self, ir_sensor=None, ultrasonic_sensor=None):
         if ir_sensor is None:
             ir_sensor = InfraredSensor()
@@ -21,67 +23,76 @@ class ScannerHead:
             ultrasonic_sensor = UltrasonicSensor()
 
         if ultrasonic_sensor.connected:
-            ultrasonic_sensor.mode = 'US-DIST-CM'
+            ultrasonic_sensor.mode = UltrasonicSensor.MODE_US_DIST_CM
             self.distance_sensor = ultrasonic_sensor
+            self.value_reader = ValueReader(ultrasonic_sensor)
             self.has_distance_sensor = True
             self.max_distance = 255 if ultrasonic_sensor.driver_name is not 'lego-ev3-us' else 2550
             self.to_cm_mul = 1 if ultrasonic_sensor.driver_name is not 'lego-ev3-us' else 0.1
         elif ir_sensor.connected:
-            ir_sensor.mode = 'IR-PROX'
+            ir_sensor.mode = InfraredSensor.MODE_IR_PROX
             self.distance_sensor = ir_sensor
+            self.value_reader = ValueReader(ir_sensor)
             self.has_distance_sensor = True
             self.max_distance = 100
             self.to_cm_mul = 0.7
         else:
             self.distance_sensor = None
+            self.value_reader = None
             self.has_distance_sensor = False
             self.max_distance = -1
             self.to_cm_mul = 0
 
 
-class Scanner:
-    def __init__(self, scanner_propulsion: ScannerPropulsion, scanner_head: ScannerHead):
+class DistanceScanner:
+    def __init__(self, scanner_propulsion: DistanceScannerPropulsion, scanner_head: DistanceScannerHead):
         self._scanner_propulsion = scanner_propulsion
-        if self._scanner_propulsion.connected:
-            self._scanner_propulsion.motor.stop_action = 'brake'
         self._scanner_head = scanner_head
+        self.reset()
 
     def reset(self):
         if self._scanner_propulsion.connected:
-            self._scanner_propulsion.motor.stop_action = 'brake'
+            self._scanner_propulsion.motor.stop_action = Motor.STOP_ACTION_BRAKE
             self.rotate_scanner_to_pos(0, speed=self._scanner_propulsion.motor.max_speed / 10)
             self.wait_to_scanner_stop()
             self._scanner_propulsion.motor.reset()
+            self._scanner_propulsion.motor.stop_action = Motor.STOP_ACTION_BRAKE
+            self._scanner_propulsion.motor.ramp_up_sp = self._scanner_propulsion.motor.max_speed
+            self._scanner_propulsion.motor.ramp_down_sp = self._scanner_propulsion.motor.max_speed
 
     def rotate_scanner_to_pos(self, angle, speed=None):  # TODO: own regulator and method as target
         motor = self._scanner_propulsion.motor
         motor.run_to_abs_pos(speed_sp=
-                             motor.max_speed / 5 if speed is None else speed * self._scanner_propulsion.total_ratio,
+                             motor.max_speed if speed is None else speed * self._scanner_propulsion.total_ratio,
                              position_sp=angle * self._scanner_propulsion.total_ratio)
 
+    @property
     def is_connected(self):
         return self._scanner_head.has_distance_sensor
 
+    @property
     def has_motor(self):
         return self._scanner_propulsion.connected
 
+    @property
     def is_running(self):
-        return 'running' in self._scanner_propulsion.motor.state
+        return Motor.STATE_RUNNING in self._scanner_propulsion.motor.state
 
+    @property
     def value_max(self):
         return self._scanner_head.max_distance * self._scanner_head.to_cm_mul
 
     def repeat_while_scanner_running(self, method):
-        while self.is_running():
+        while self.is_running:
             method()
 
     def wait_to_scanner_stop(self):
         self.repeat_while_scanner_running(lambda: time.sleep(0))
 
-    def value_get(self, percent=True):
+    def value_get(self, percent=True, force_new=False):
         if percent:
-            return self._scanner_head.distance_sensor.value() / self._scanner_head.max_distance * 100
-        return self._scanner_head.distance_sensor.value() * self._scanner_head.to_cm_mul
+            return self._scanner_head.value_reader.value(force_new=force_new) / self._scanner_head.max_distance * 100
+        return self._scanner_head.value_reader.value(force_new=force_new) * self._scanner_head.to_cm_mul
 
     def angle_get(self):
         return self._scanner_propulsion.motor.position / self._scanner_propulsion.total_ratio
@@ -90,8 +101,10 @@ class Scanner:
         if self.angle_get() != angle:
             self.rotate_scanner_to_pos(angle)
             self.wait_to_scanner_stop()
-        return self.value_get(percent)
+        return self.value_get(percent, True)
 
     def value_scan_continuous(self, to_angle, value_handler, percent=True):
         self.rotate_scanner_to_pos(to_angle)
-        self.repeat_while_scanner_running(lambda: value_handler(self.value_get(percent), self.angle_get()))
+        self._scanner_head.value_reader.pause()
+        self.repeat_while_scanner_running(lambda: value_handler(self.value_get(percent, True), self.angle_get()))
+        self._scanner_head.value_reader.resume()

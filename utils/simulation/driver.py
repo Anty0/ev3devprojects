@@ -1,3 +1,4 @@
+import math
 import time
 from threading import Thread
 
@@ -149,7 +150,7 @@ class MotorDriver(DeviceDriver):
                 self._stop_action = 'coast'
                 self._time_sp = 0
 
-            last_time = wait_to_cycle_time(last_time, cycle_time)
+            last_time = wait_to_cycle_time(__name__, last_time, cycle_time)
 
     @property
     def address(self):
@@ -514,16 +515,23 @@ class UltrasonicSensorDriver(SensorDriver):
     def value0(self):  # TODO: crop distance values
         ev3 = self._driver_name == 'lego-ev3-us'
         if self._mode == UltrasonicSensor.MODE_US_DIST_CM:
-            return str(int(self._controller
-                           .get_distance_on_pos(self._position) * (10 if ev3 else 1)))  # map must be in cm
+            distance = self._controller.get_distance_on_pos(self._position)
+            return str(int((distance * (10 if ev3 else 1)) if math.isfinite(distance) and
+                                                              distance < (2550 if ev3 else 255) else (
+                2550 if ev3 else 255)))  # map must be in cm
         if self._mode == UltrasonicSensor.MODE_US_DIST_IN:
-            return str(int(self._controller.get_distance_on_pos(self._position) * 10))  # map must be in inch
+            distance = self._controller.get_distance_on_pos(self._position)
+            return str(int((distance * 10) if math.isfinite(distance) and
+                                              distance < 1003 else 1003))  # map must be in inch
         if self._mode == UltrasonicSensor.MODE_US_LISTEN:
             return str(int(0))  # TODO: add support
         if self._mode == UltrasonicSensor.MODE_US_SI_CM:
-            return str(int(self._tmp_value * (10 if ev3 else 1)))  # map must be in cm
+            return str(int((self._tmp_value * (10 if ev3 else 1)) if math.isfinite(self._tmp_value) and
+                                                                     self._tmp_value < (2550 if ev3 else 255) else (
+                2550 if ev3 else 255)))  # map must be in cm
         if self._mode == UltrasonicSensor.MODE_US_SI_IN:
-            return str(int(self._tmp_value * 10))  # map must be in inch
+            return str(int((self._tmp_value * 10) if math.isfinite(self._tmp_value) and
+                                                     self._tmp_value < 1003 else 1003))  # map must be in inch
         raise Exception()
 
 
@@ -624,7 +632,8 @@ class InfraredSensorDriver(SensorDriver):
     @property
     def value0(self):  # TODO: crop distance values
         if self._mode == InfraredSensor.MODE_IR_PROX:
-            return str(int(self._controller.get_distance_on_pos(self._position) / 70 * 100))
+            distance = self._controller.get_distance_on_pos(self._position)
+            return str(int((distance / 70 * 100) if math.isfinite(distance) and distance < 70 else 100))
         if self._mode == InfraredSensor.MODE_IR_SEEK:
             return str(0)  # TODO: add support
         if self._mode == InfraredSensor.MODE_IR_REMOTE:

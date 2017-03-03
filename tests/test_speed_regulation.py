@@ -20,7 +20,7 @@ try:
     last_time = time.time()
     while True:
         LEFT_MOTOR.duty_cycle_sp = crop_r(regulator.regulate(LEFT_MOTOR.position))
-        last_time = wait_to_cycle_time(last_time, 0.05)
+        last_time = wait_to_cycle_time(__name__, last_time, 0.05)
 except KeyboardInterrupt:
     pass
 

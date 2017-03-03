@@ -14,9 +14,9 @@ class AutoDriveController(SimpleRobotProgramController):
     def __init__(self, robot_program, config=None):
         super().__init__(robot_program, config)
 
-        self.stop = False
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
+        self._stop = False
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
 
     def _run(self):
         scan_results = [100, 100, 100]
@@ -100,7 +100,7 @@ class AutoDriveController(SimpleRobotProgramController):
         next_positive = True
 
         PILOT.run_direct()
-        while not self.stop:
+        while not self._stop:
             side_degrees = self.get_config_value('MOTOR_SCANNER_SIDE_DEGREES')
             scanner_target = side_degrees if next_positive else -side_degrees
             next_positive = not next_positive
@@ -115,10 +115,10 @@ class AutoDriveController(SimpleRobotProgramController):
         super().on_config_value_change(name, new_value)
 
     def request_exit(self):
-        self.stop = True
+        self._stop = True
 
     def wait_to_exit(self):
-        while self.thread.is_alive():
+        while self._thread.is_alive():
             time.sleep(0)
 
 
@@ -127,7 +127,7 @@ class AutoDriveRobotProgram(RobotProgram):
         super().__init__('AutoDrive', AUTO_DRIVER_CONFIG_VALUES)
 
     def execute(self, config=None) -> AutoDriveController:
-        if not PILOT.is_connected() or not SCANNER.is_connected() or not SCANNER.has_motor():
+        if not PILOT.is_connected or not SCANNER.is_connected or not SCANNER.has_motor:
             raise Exception('AutoDrive requires wheels and rotating scanner.')
         return AutoDriveController(self, config)
 
