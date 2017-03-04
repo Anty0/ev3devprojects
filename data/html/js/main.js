@@ -20,7 +20,7 @@ function extractConfigValue(programName, valueName) {
     return element.type == 'checkbox' ? element.checked : element.value;
 }
 
-setInterval(updateLog, 1500);
+//setInterval(updateLog, 1500);
 
 function updateLog() {
     $.ajax({

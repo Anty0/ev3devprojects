@@ -303,7 +303,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
 
         read_val = COLOR_SENSOR_READER.value()
         read_percent = 100 * (read_val - min_reflect) / (max_reflect - min_reflect)
-        course = crop_r(self._steer_regulator.regulate(read_percent) * line_side)
+        course = crop_r(self._steer_regulator.regulate(read_percent) * line_side, 160)
 
         if self._test_sharp_turn(min_reflect, max_reflect, target_power, target_cycle_time) \
                 or self._test_stop_on_line_end():

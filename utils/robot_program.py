@@ -67,6 +67,11 @@ class SimpleRobotProgramController(RobotProgramController):
         elif value_type == 'float':
             converted_value = float(value)
         elif value_type == 'bool' or value_type == 'boolean':
+            if isinstance(value, str):
+                if value == 'true' or value == 'True':
+                    value = True
+                elif value == 'false' or value == 'False':
+                    value = False
             converted_value = bool(value)
         elif value_type == 'enum':
             converted_value = self.robot_program.config_values[name]['enum_options'][str(value)]

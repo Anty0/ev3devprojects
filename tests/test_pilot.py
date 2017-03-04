@@ -7,18 +7,37 @@ LEFT_MOTOR = LargeMotor(OUTPUT_B)
 RIGHT_MOTOR = LargeMotor(OUTPUT_C)
 
 pilot = Pilot([
-    Wheel(LEFT_MOTOR, -12 / 36, 4.3, 2.1, -6.5),
-    Wheel(RIGHT_MOTOR, -12 / 36, 4.3, 2.1, 6.5)
+    Wheel(LEFT_MOTOR, 1, 4.3, 2.1, -6.5),  # -12 / 36
+    Wheel(RIGHT_MOTOR, 1, 4.3, 2.1, 6.5)  # -12 / 36
 ])
 
-pilot.run_forever(speeds_tacho=[50, -50])  # [-1050, 1050] Still ok
-try:
-    pilot.wait_to_stop()
-except KeyboardInterrupt as e:
-    pass
-finally:
-    pilot.stop()
+# try:
+#     pilot.run_percent_drive_timed(5, 200, 1, async=True)
+#     pilot.wait_to_stop()
+# finally:
+#     pilot.stop()
 
+while True:
+    try:
+        pilot.run_percent_drive_to_angle_deg(90, 200, 2, async=True)
+        pilot.wait_to_stop()
+    finally:
+        pilot.stop()
+
+    try:
+        pilot.run_percent_drive_to_angle_deg(90, -200, 2, async=True)
+        pilot.wait_to_stop()
+    finally:
+        pilot.stop()
+
+# pilot.run_forever(speeds_tacho=[50, -50])  # [-1050, 1050] Still ok
+# try:
+#     pilot.wait_to_stop()
+# except KeyboardInterrupt as e:
+#     pass
+# finally:
+#     pilot.stop()
+#
 # time.sleep(10)
 #
 # pilot.run_timed(10, speeds_tacho=[-50, 50])

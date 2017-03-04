@@ -1,4 +1,4 @@
-import numpy as np
+# import numpy as np
 
 
 class Map(object):
@@ -43,7 +43,7 @@ class Map(object):
         self.resolution = resolution
         self.width = width
         self.height = height
-        self.grid = np.zeros((height, width))
+        # self.grid = np.zeros((height, width))
 
     def set_cell(self, x, y, val):
         """ Set the value of a cell in the grid.
