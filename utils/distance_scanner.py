@@ -87,7 +87,7 @@ class DistanceScanner:
             method()
 
     def wait_to_scanner_stop(self):
-        self.repeat_while_scanner_running(lambda: time.sleep(0))
+        self.repeat_while_scanner_running(lambda: time.sleep(0.05))
 
     def value_get(self, percent=True, force_new=False):
         if percent:

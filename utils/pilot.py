@@ -284,6 +284,7 @@ class Pilot:
         #     speeds.append(max_speed - (abs(course_percent) * effect / 100 * max_speed))
 
         half_course = course_percent / 100 * max_speed / 2
+
         max_gen_speed = -max_speed
         min_gen_speed = max_speed
         for wheel in self._wheels:
@@ -607,4 +608,4 @@ class Pilot:
             method()
 
     def wait_to_stop(self, cond_and=None, cond_or=None):
-        self.repeat_while_running(lambda: time.sleep(0), cond_and, cond_or)
+        self.repeat_while_running(lambda: time.sleep(0.05), cond_and, cond_or)

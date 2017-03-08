@@ -170,13 +170,13 @@ class MotorDriver(DeviceDriver):
             self._commands_handler_thread.start()
 
         while self._last_command != self._command:
-            time.sleep(0)
+            time.sleep(0.02)
 
         if self._command == value:
             self._command = ''
 
             while self._last_command != self._command:
-                time.sleep(0)
+                time.sleep(0.02)
 
         self._command = value
 

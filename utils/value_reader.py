@@ -49,19 +49,19 @@ class ValueReader(Thread):
             if self._pause:
                 self._paused = True
                 while self._pause > 0 and self._run:
-                    time.sleep(0)
+                    time.sleep(0.05)
                 self._paused = False
 
             for n in range(self._num_values):
                 self._values[n] = self._sensor.value(n)
-            time.sleep(0)
+            time.sleep(0.01)
 
     def pause(self):
         self._pause += 1
 
     def wait_to_pause(self):
         while not self._paused:
-            time.sleep(0)
+            time.sleep(0.025)
 
     def resume(self):
         self._pause -= 1

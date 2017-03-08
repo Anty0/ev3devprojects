@@ -94,4 +94,4 @@ class BehaviourController(RobotProgramController, Behaviours):
 
     def wait_to_exit(self):
         while self.thread.is_alive():
-            time.sleep(0)
+            time.sleep(0.1)
