@@ -6,7 +6,7 @@ import time
 
 from config import AUTO_DRIVER_CONFIG_VALUES
 from hardware import PILOT, SCANNER, reset_hardware
-from utils.robot_program import RobotProgram, SimpleRobotProgramController
+from utils.robot_program import RobotProgram, SimpleRobotProgramController, run_program
 from utils.utils import crop_r
 
 
@@ -133,15 +133,8 @@ class AutoDriveRobotProgram(RobotProgram):
 
 
 def run():
-    controller = AutoDriveRobotProgram().execute()
-    try:
-        while True:
-            time.sleep(0.2)
-    except KeyboardInterrupt:
-        pass
-
-    controller.request_exit()
-    controller.wait_to_exit()
+    config = {}
+    run_program(AutoDriveRobotProgram(), config)
 
 
 if __name__ == '__main__':

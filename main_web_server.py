@@ -3,15 +3,14 @@
 import json
 import logging
 import os
-
-from odict.pyodict import odict
+from collections import OrderedDict
 
 import config
 from utils.web_server import FilesWebHandler
 
 log = logging.getLogger(__name__)
 
-robot_programs = odict()
+robot_programs = OrderedDict()
 running_controllers = {}
 
 
@@ -72,11 +71,11 @@ class MainWebHandler(FilesWebHandler):
 
             programs_lines = ''
             for robot_program in robot_programs.values():
-                categories = odict()
+                categories = OrderedDict()
                 for value_name, value_info in robot_program.config_values.items():
                     category = value_info['category'] if 'category' in value_info else 'Main'
                     if category not in categories:
-                        categories[category] = odict()
+                        categories[category] = OrderedDict()
                     categories[category][value_name] = value_info
 
                 actual_program_config = ''

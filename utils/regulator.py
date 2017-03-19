@@ -4,42 +4,46 @@ from .utils import crop_r
 class RegulatorBase:
     def __init__(self, const_p=None, const_i=None, const_d=None, const_target=None,
                  getter_p=None, getter_i=None, getter_d=None, getter_target=None):
-        self.const_p = const_p
-        self.const_i = const_i
-        self.const_d = const_d
-        self.const_target = const_target
+        self._const_p = const_p
+        self._const_i = const_i
+        self._const_d = const_d
+        self._const_target = const_target
 
-        self.getter_p = getter_p
-        self.getter_i = getter_i
-        self.getter_d = getter_d
-        self.getter_target = getter_target
+        self._getter_p = getter_p
+        self._getter_i = getter_i
+        self._getter_d = getter_d
+        self._getter_target = getter_target
 
+        self.loop_count = 0
         self.last_error = 0
         self.last_derivative = 0
         self.last_integral = 0
 
     def reset(self):
+        self.loop_count = 0
         self.last_error = 0
+        self.last_derivative = 0
         self.last_integral = 0
 
-    def _get_p(self):
-        result = self.getter_p() if self.getter_p is not None else None
-        return result if result is not None else self.const_p
+    def get_p(self) -> float:
+        result = self._getter_p() if self._getter_p is not None else None
+        return result if result is not None else self._const_p
 
-    def _get_i(self):
-        result = self.getter_i() if self.getter_i is not None else None
-        return result if result is not None else self.const_i
+    def get_i(self) -> float:
+        result = self._getter_i() if self._getter_i is not None else None
+        return result if result is not None else self._const_i
 
-    def _get_d(self):
-        result = self.getter_d() if self.getter_d is not None else None
-        return result if result is not None else self.const_d
+    def get_d(self) -> float:
+        result = self._getter_d() if self._getter_d is not None else None
+        return result if result is not None else self._const_d
 
-    def _get_target(self):
-        result = self.getter_target() if self.getter_target is not None else None
-        return result if result is not None else self.const_target
+    def get_target(self) -> float:
+        result = self._getter_target() if self._getter_target is not None else None
+        return result if result is not None else self._const_target
 
-    def regulate(self, input_val):
-        pass
+    def regulate(self, input_val) -> float:
+        self.loop_count += 1
+        return 0
 
 
 class ValueRegulator(RegulatorBase):
@@ -48,12 +52,14 @@ class ValueRegulator(RegulatorBase):
         RegulatorBase.__init__(self, const_p, const_i, const_d, const_target,
                                getter_p, getter_i, getter_d, getter_target)
 
-    def regulate(self, input_val):
-        target = self._get_target()
+    def regulate(self, input_val) -> float:
+        RegulatorBase.regulate(self, input_val)
+
+        target = self.get_target()
         error = target - input_val
         return self.regulate_error(error)
 
-    def regulate_error(self, error):
+    def regulate_error(self, error) -> float:
         integral = float(0.5) * self.last_integral + error
         self.last_integral = integral
 
@@ -61,7 +67,7 @@ class ValueRegulator(RegulatorBase):
         self.last_error = error
         self.last_derivative = derivative
 
-        return self._get_p() * error + self._get_i() * integral + self._get_d() * derivative
+        return self.get_p() * error + self.get_i() * integral + self.get_d() * derivative
 
 
 class PercentRegulator(ValueRegulator):
@@ -70,9 +76,11 @@ class PercentRegulator(ValueRegulator):
         ValueRegulator.__init__(self, const_p, const_i, const_d, const_target,
                                 getter_p, getter_i, getter_d, getter_target)
 
-    def regulate(self, input_val):
+    def regulate(self, input_val) -> float:
+        RegulatorBase.regulate(self, input_val)
+
         input_val = crop_r(input_val)
-        target = self._get_target()
+        target = self.get_target()
         max_positive_error = abs(100 - target) * 0.6
         max_negative_error = abs(-target) * 0.6
 

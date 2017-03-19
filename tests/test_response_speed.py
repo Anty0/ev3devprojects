@@ -1,7 +1,10 @@
 import math
 import time
+from collections import OrderedDict
 
-from ev3dev.auto import LargeMotor, MediumMotor, ColorSensor, InfraredSensor, UltrasonicSensor
+from odict.pyodict import odict
+
+# from ev3dev.auto import LargeMotor, MediumMotor, ColorSensor, InfraredSensor, UltrasonicSensor
 
 RETRIES = 3
 LOOPS = 25000
@@ -39,56 +42,87 @@ class TestCase:
 
 
 TestCase('empty_loop', lambda: None).start()
+
 print()
+
 TestCase('math(5 + 5)', lambda: 5 + 5).start()
 TestCase('math(5 * 5)', lambda: 5 * 5).start()
 TestCase('math(5**2)', lambda: 5 ** 2).start()
-TestCase('math(pow(5, 2))', lambda: math.pow(5, 2)).start()
-TestCase('math(sqrt(2))', lambda: math.sqrt(2)).start()
+TestCase('math.pow(5, 2)', lambda: math.pow(5, 2)).start()
+TestCase('math.sqrt(2)', lambda: math.sqrt(2)).start()
+
 print()
-TestCase('sleep(0.001)', lambda: time.sleep(0.001)).start()
-TestCase('sleep(0.002)', lambda: time.sleep(0.002)).start()
-print()
-motor = LargeMotor()
-test = TestCase('large_motor(pos)', lambda: motor.position)
-test.start() if motor.connected else test.skip()
-if motor.connected: motor.reset()
-print()
-motor = MediumMotor()
-test = TestCase('medium_motor(pos)', lambda: motor.position)
-test.start() if motor.connected else test.skip()
-if motor.connected: motor.reset()
-print()
-sensor = ColorSensor()
-test = TestCase('color_sensor(ref)', sensor.value, lambda: setattr(sensor, 'mode', ColorSensor.MODE_COL_REFLECT))
-test.start() if sensor.connected else test.skip()
-test = TestCase('color_sensor(amb)', sensor.value, lambda: setattr(sensor, 'mode', ColorSensor.MODE_COL_AMBIENT))
-test.start() if sensor.connected else test.skip()
-test = TestCase('color_sensor(col)', sensor.value, lambda: setattr(sensor, 'mode', ColorSensor.MODE_COL_COLOR))
-test.start() if sensor.connected else test.skip()
-if motor.connected: sensor.mode = ColorSensor.MODE_COL_REFLECT
-print()
-sensor = InfraredSensor()
-test = TestCase('infrared_sensor(prox_dis)', sensor.value, lambda: setattr(sensor, 'mode', InfraredSensor.MODE_IR_PROX))
-test.start() if sensor.connected else test.skip()
-test = TestCase('infrared_sensor(rem)', sensor.value, lambda: setattr(sensor, 'mode', InfraredSensor.MODE_IR_REMOTE))
-test.start() if sensor.connected else test.skip()
-if motor.connected: sensor.mode = InfraredSensor.MODE_IR_PROX
-print()
-sensor = UltrasonicSensor()
-test = TestCase('ultrasonic_sensor(dist_cm)', sensor.value,
-                lambda: setattr(sensor, 'mode', UltrasonicSensor.MODE_US_DIST_CM))
-test.start() if sensor.connected else test.skip()
-test = TestCase('ultrasonic_sensor(dist_in)', sensor.value,
-                lambda: setattr(sensor, 'mode', UltrasonicSensor.MODE_US_DIST_IN))
-test.start() if sensor.connected else test.skip()
-test = TestCase('ultrasonic_sensor(listen)', sensor.value,
-                lambda: setattr(sensor, 'mode', UltrasonicSensor.MODE_US_LISTEN))
-test.start() if sensor.connected else test.skip()
-if motor.connected: sensor.mode = UltrasonicSensor.MODE_US_DIST_CM
+
+some_dict = {'SOME_VALUE': 'Something'}
+TestCase('dict_read', lambda: some_dict['SOME_VALUE']).start()
+del some_dict
+some_odict = odict()
+some_odict['SOME_VALUE'] = 'Something'
+TestCase('odict_read', lambda: some_odict['SOME_VALUE']).start()
+del some_odict
+some_ordered_dict = OrderedDict()
+some_ordered_dict['SOME_VALUE'] = 'Something'
+TestCase('OrderedDict_read', lambda: some_ordered_dict['SOME_VALUE']).start()
+del some_ordered_dict
+
+
+class SomeObj:
+    def __init__(self):
+        self.some_value = 'Something'
+
+
+some_obj = SomeObj()
+TestCase('direct_read', lambda: some_obj.some_value).start()
+TestCase('get_attr_read', lambda: getattr(some_obj, 'some_value')).start()
+del some_obj
+some_val = 'Something'
+TestCase('direct_local_read', lambda: some_val).start()
+del some_val
+
+# print()
+# TestCase('sleep(0.001)', lambda: time.sleep(0.001)).start()
+# TestCase('sleep(0.002)', lambda: time.sleep(0.002)).start()
+# print()
+# motor = LargeMotor()
+# test = TestCase('large_motor(pos)', lambda: motor.position)
+# test.start() if motor.connected else test.skip()
+# if motor.connected: motor.reset()
+# print()
+# motor = MediumMotor()
+# test = TestCase('medium_motor(pos)', lambda: motor.position)
+# test.start() if motor.connected else test.skip()
+# if motor.connected: motor.reset()
+# print()
+# sensor = ColorSensor()
+# test = TestCase('color_sensor(ref)', sensor.value, lambda: setattr(sensor, 'mode', ColorSensor.MODE_COL_REFLECT))
+# test.start() if sensor.connected else test.skip()
+# test = TestCase('color_sensor(amb)', sensor.value, lambda: setattr(sensor, 'mode', ColorSensor.MODE_COL_AMBIENT))
+# test.start() if sensor.connected else test.skip()
+# test = TestCase('color_sensor(col)', sensor.value, lambda: setattr(sensor, 'mode', ColorSensor.MODE_COL_COLOR))
+# test.start() if sensor.connected else test.skip()
+# if motor.connected: sensor.mode = ColorSensor.MODE_COL_REFLECT
+# print()
+# sensor = InfraredSensor()
+# test = TestCase('infrared_sensor(prox_dis)', sensor.value, lambda: setattr(sensor, 'mode', InfraredSensor.MODE_IR_PROX))
+# test.start() if sensor.connected else test.skip()
+# test = TestCase('infrared_sensor(rem)', sensor.value, lambda: setattr(sensor, 'mode', InfraredSensor.MODE_IR_REMOTE))
+# test.start() if sensor.connected else test.skip()
+# if motor.connected: sensor.mode = InfraredSensor.MODE_IR_PROX
+# print()
+# sensor = UltrasonicSensor()
+# test = TestCase('ultrasonic_sensor(dist_cm)', sensor.value,
+#                 lambda: setattr(sensor, 'mode', UltrasonicSensor.MODE_US_DIST_CM))
+# test.start() if sensor.connected else test.skip()
+# test = TestCase('ultrasonic_sensor(dist_in)', sensor.value,
+#                 lambda: setattr(sensor, 'mode', UltrasonicSensor.MODE_US_DIST_IN))
+# test.start() if sensor.connected else test.skip()
+# test = TestCase('ultrasonic_sensor(listen)', sensor.value,
+#                 lambda: setattr(sensor, 'mode', UltrasonicSensor.MODE_US_LISTEN))
+# test.start() if sensor.connected else test.skip()
+# if motor.connected: sensor.mode = UltrasonicSensor.MODE_US_DIST_CM
 
 """
-Last output:
+Last outputs:
 
 Starting response speed test. Every result will be calculated 3 times using diameter of 25000 results times
 -Test(empty_loop): Preparing

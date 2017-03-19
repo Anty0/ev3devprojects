@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import logging
-import math
 import time
 
-from config import ROBOT_WIDTH, LINE_FOLLOWER_CONFIG_VALUES
+from config import ROBOT_WIDTH, ROBOT_SENSOR_DISTANCE_OFFSET_Y, \
+    ROBOT_SENSOR_COLOR_OFFSET_Y, LINE_FOLLOWER_CONFIG_VALUES
 from hardware import PILOT, COLOR_SENSOR_READER, HAS_COLOR_SENSOR, SCANNER, reset_hardware
 from utils.behaviour import Behaviour, MultiBehaviour, BehaviourController
 from utils.regulator import PercentRegulator
-from utils.robot_program import RobotProgram, SimpleRobotProgramController, ControllerConfigWrapper
+from utils.robot_program import RobotProgram, SimpleRobotProgramController, ControllerConfigWrapper, run_program
 from utils.utils import crop_r, crop_m, wait_to_cycle_time
 
 log = logging.getLogger(__name__)
@@ -20,14 +20,16 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
 
         self._start_positions = []
         self._power_regulator = PercentRegulator(const_p=1, const_i=3, const_d=2,  # TODO: to config
-                                                 getter_target=lambda: -self._get_target_distance())
+                                                 getter_target=lambda: self._get_target_distance())
 
     def _get_target_distance(self):
-        self.get_config_value('OBSTACLE_MIN_DISTANCE') * 0.8
+        return self.get_config_value('OBSTACLE_MIN_DISTANCE') * 0.8
 
     def should_take_control(self):
         if not self.get_config_value('COLLISION_AVOID'):
             return False
+        if not self.get_config_value('OBSTACLE_AVOID'):
+            return True
 
         min_distance = self.get_config_value('OBSTACLE_MIN_DISTANCE')
         cycle_time = 0.1
@@ -66,7 +68,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         last_time = time.time()
         while not self.controller.stop:
             distance_val = SCANNER.value_scan(0)
-            power = self._power_regulator.regulate(-distance_val)
+            power = self._power_regulator.regulate(distance_val) * -1
             PILOT.update_duty_cycle(0, crop_m(power, max_out=0))
 
             if distance_val > self._get_target_distance():
@@ -83,7 +85,7 @@ class CollisionAvoidBehaviour(Behaviour, ControllerConfigWrapper):
                     else:
                         problem = False
                         for i in [-1, 1]:
-                            side_distance_val = SCANNER.value_scan(35 * i)
+                            side_distance_val = SCANNER.value_scan(40 * i)
 
                             if side_distance_val < self._get_target_distance():
                                 SCANNER.rotate_scanner_to_pos(0)
@@ -145,15 +147,15 @@ class ObstacleAvoidBehaviour(Behaviour, ControllerConfigWrapper):
         target_power = self.get_config_value('TARGET_POWER')
         target_speed = target_power / 100 * PILOT.get_max_speed_unit()
 
-        min_distance = self.get_config_value('OBSTACLE_MIN_DISTANCE')
+        min_distance = self.get_config_value('OBSTACLE_MIN_DISTANCE') + 10 + ROBOT_SENSOR_DISTANCE_OFFSET_Y
         obstacle_width = self.get_config_value('OBSTACLE_WIDTH')
         obstacle_height = self.get_config_value('OBSTACLE_HEIGHT')
         side = self.get_config_value('OBSTACLE_AVOID_SIDE')
         course = 80 * side
-        scanner_pos = 90 * side
+        scanner_pos = 90 * -side
 
         PILOT.run_percent_drive_to_angle_deg(90, course, speed_unit=target_speed)
-        if obstacle_width is None or obstacle_height is None:
+        if obstacle_width == 0 or obstacle_height == 0:
             SCANNER.rotate_scanner_to_pos(scanner_pos)
         PILOT.wait_to_stop()
 
@@ -263,22 +265,30 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
             self._last_power = target_power
         return self._last_power
 
-    def _test_sharp_turn(self, min_reflect, max_reflect, target_power, target_cycle_time) -> bool:
-        if not self.get_config_value('SHARP_TURN_DETECT') or not abs(self._steer_regulator.last_derivative) > 75:
+    def _test_sharp_turn(self, target_power) -> bool:
+        if not self.get_config_value('SHARP_TURN_DETECT') or not self._steer_regulator.loop_count > 10 \
+                or not abs(self._steer_regulator.last_derivative) > 75:
             # TODO: test and add to config
             return False
 
         side = self.get_config_value('SHARP_TURN_ROTATE_SIDE')
-        target_reflect = self.get_config_value('TARGET_REFLECT')
-        PILOT.update_duty_cycle(100 * side, target_power)
 
-        while (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) * 100 <= target_reflect:
-            time.sleep(target_cycle_time)
+        PILOT.stop()
+        PILOT.run_drive_to_angle_deg(90 * side, ROBOT_SENSOR_COLOR_OFFSET_Y,
+                                     speed_unit=target_power / 100 * PILOT.get_max_speed_unit())
+        PILOT.wait_to_stop()
+        PILOT.run_direct()
 
-        time.sleep(target_cycle_time)
-
-        while (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) * 100 > target_reflect:
-            time.sleep(target_cycle_time)
+        # target_reflect = self.get_config_value('TARGET_REFLECT')
+        # PILOT.update_duty_cycle(100 * side, target_power)
+        #
+        # while (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) * 100 <= target_reflect:
+        #     time.sleep(target_cycle_time)
+        #
+        # time.sleep(target_cycle_time)
+        #
+        # while (COLOR_SENSOR_READER.value() - min_reflect) / (max_reflect - min_reflect) * 100 > target_reflect:
+        #     time.sleep(target_cycle_time)
 
         self.reset_regulation()
         self._last_time = time.time()
@@ -305,15 +315,14 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
         read_percent = 100 * (read_val - min_reflect) / (max_reflect - min_reflect)
         course = crop_r(self._steer_regulator.regulate(read_percent) * line_side, 160)
 
-        if self._test_sharp_turn(min_reflect, max_reflect, target_power, target_cycle_time) \
-                or self._test_stop_on_line_end():
+        if self._test_sharp_turn(target_power) or self._test_stop_on_line_end():
             return
 
         # if ENABLE_SOUNDS:
-        #     SOUND.beep([(int(course + 200), int(target_cycle_time * 1000))])
+        #     SOUND.beep('-f ' + str(int(course + 200)) + ' -l ' + str(int(target_cycle_time * 1000)))
 
         if power_adaptation:
-            target_power_mul = (1 / (1 + math.pow(abs(self._steer_regulator.last_integral) / 25, 3))) * 0.8 + 0.2
+            target_power_mul = (1 / (1 + (abs(self._steer_regulator.last_integral) / 100))) * 0.6 + 0.4
         else:
             target_power_mul = 1
         PILOT.update_duty_cycle(course, target_power * target_power_mul)
@@ -358,7 +367,7 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
             PILOT.run_percent_drive_to_angle_deg(45, 200, 10)
             PILOT.repeat_while_running(lambda: self._scan_min_max_reflect(reflect))
 
-        if reflect[0] == reflect[1]:
+        if reflect[0] is not None and reflect[1] is not None and reflect[0] == reflect[1]:
             log.error('Failed to detect reflect, falling back to defaults.')
             reflect = [None, None]
         self.set_private_config_value('MIN_REFLECT', reflect[0])
@@ -398,15 +407,8 @@ class LineFollowRobotProgram(RobotProgram):
 
 
 def run():
-    controller = LineFollowRobotProgram().execute()
-    try:
-        while True:
-            time.sleep(0.2)
-    except KeyboardInterrupt:
-        pass
-
-    controller.request_exit()
-    controller.wait_to_exit()
+    config = {}
+    run_program(LineFollowRobotProgram(), config)
 
 
 if __name__ == '__main__':

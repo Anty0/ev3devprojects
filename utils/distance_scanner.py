@@ -55,10 +55,12 @@ class DistanceScanner:
             self._scanner_propulsion.motor.stop_action = Motor.STOP_ACTION_BRAKE
             self.rotate_scanner_to_pos(0, speed=self._scanner_propulsion.motor.max_speed / 10)
             self.wait_to_scanner_stop()
+            self.rotate_scanner_to_pos(0, speed=self._scanner_propulsion.motor.max_speed / 10)
+            self.wait_to_scanner_stop()
             self._scanner_propulsion.motor.reset()
             self._scanner_propulsion.motor.stop_action = Motor.STOP_ACTION_BRAKE
-            self._scanner_propulsion.motor.ramp_up_sp = self._scanner_propulsion.motor.max_speed
-            self._scanner_propulsion.motor.ramp_down_sp = self._scanner_propulsion.motor.max_speed
+            self._scanner_propulsion.motor.ramp_up_sp = self._scanner_propulsion.motor.max_speed / 2
+            self._scanner_propulsion.motor.ramp_down_sp = self._scanner_propulsion.motor.max_speed / 2
 
     def rotate_scanner_to_pos(self, angle, speed=None):  # TODO: own regulator and method as target
         motor = self._scanner_propulsion.motor
