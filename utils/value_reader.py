@@ -14,7 +14,7 @@ class ValueReader(Thread):
         self._sensor = sensor
         self._num_values = 0
         self._values = []
-        self._reads = 0
+        self._reads = 1
         self.reload()
         self.start()
 
