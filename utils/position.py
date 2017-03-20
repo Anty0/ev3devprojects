@@ -16,7 +16,7 @@ class Position2D:
     def get_angle_rad(self):
         raise NotImplementedError
 
-    def offset_by(self, offset_position):
+    def offset_by(self, offset_position):  # TODO: if self.angle != 0 offset x and y by rotated offset
         return Position2D(self.get_x() + offset_position.get_x(),
                           self.get_y() + offset_position.get_y(),
                           self.get_angle_deg() + offset_position.get_angle_deg())

@@ -160,7 +160,7 @@ class DriveCoordinator(CycleThreadCoordinator):
 
 
 class Pilot:
-    def __init__(self, wheels: list):
+    def __init__(self, *wheels):
         self._running_coordinator = None
         self._wheels = []
         self._has_wheels = False
@@ -174,13 +174,13 @@ class Pilot:
 
         self._max_offset = 0
 
-        self.set_wheels(wheels)
+        self.set_wheels(*wheels)
 
     @property
     def is_connected(self):
         return self._has_wheels
 
-    def set_wheels(self, wheels: list):
+    def set_wheels(self, *wheels):
         self.stop()
         self.wait_to_stop()
 

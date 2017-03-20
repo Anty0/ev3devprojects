@@ -41,7 +41,7 @@ div#log-wrapper {
 }
 
 pre#log-content {
-
+    min-height: 50px;
 }
 
 div#programs-list {

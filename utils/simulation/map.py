@@ -1,7 +1,7 @@
 # import numpy as np
 
 
-class Map(object):
+class Map(object):  # TODO: implement
     """
     The Map class stores an occupancy grid as a two dimensional
     numpy array.

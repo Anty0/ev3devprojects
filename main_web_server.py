@@ -5,25 +5,27 @@ import logging
 import os
 from collections import OrderedDict
 
-import config
+from config import SERVER_HTML_DIR, SERVER_DATA_DIR, LOG_TMP
+from hardware import generate_hardware_status_obj
 from utils.web_server import FilesWebHandler
 
 log = logging.getLogger(__name__)
 
-robot_programs = OrderedDict()
-running_controllers = {}
+ROBOT_PROGRAMS = OrderedDict()
+RUNNING_CONTROLLERS = {}
 
 
-def add_program(robot_program):
-    robot_programs[robot_program.name] = robot_program
+def add_programs(*robot_programs):
+    for robot_program in robot_programs:
+        ROBOT_PROGRAMS[robot_program.name] = robot_program
 
 
 class MainWebHandler(FilesWebHandler):
     def _get_html_dir(self):
-        return config.SERVER_HTML_DIR
+        return SERVER_HTML_DIR
 
     def _get_data_dir(self):
-        return config.SERVER_DATA_DIR
+        return SERVER_DATA_DIR
 
     def command_get_log(self, path, post_args, get_args, data):
         self.send_response(200)
@@ -32,7 +34,9 @@ class MainWebHandler(FilesWebHandler):
 
         if self.command != 'HEAD':
             self.wfile.write(json.dumps({
-                'logText': config.LOG_TMP
+                'logText': json.dumps(generate_hardware_status_obj(),
+                                      sort_keys=False, indent=3, separators=(',', ': ')
+                                      ) + '\n\n' + LOG_TMP
             }).encode())
 
         return True
@@ -70,7 +74,7 @@ class MainWebHandler(FilesWebHandler):
                 program_enum_option_config_line = fh.read()
 
             programs_lines = ''
-            for robot_program in robot_programs.values():
+            for robot_program in ROBOT_PROGRAMS.values():
                 categories = OrderedDict()
                 for value_name, value_info in robot_program.config_values.items():
                     category = value_info['category'] if 'category' in value_info else 'Main'
@@ -126,7 +130,7 @@ class MainWebHandler(FilesWebHandler):
                         .replace('<!--robot_program_category_config-->', actual_program_category_config) \
                         .replace('<!--robot_program_config_category_name-->', category_name)
 
-                running = robot_program.name in running_controllers
+                running = robot_program.name in RUNNING_CONTROLLERS
                 programs_lines += '\n' + program_line \
                     .replace('<!--robot_program_config-->', actual_program_config) \
                     .replace('<!--robot_program_name-->', robot_program.name) \
@@ -142,17 +146,17 @@ class MainWebHandler(FilesWebHandler):
             return False
 
         program_name = post_args[b'name'][0].decode()
-        running = program_name in running_controllers
+        running = program_name in RUNNING_CONTROLLERS
         additional_controls = ''
         status = 'none'
 
         if not running:
-            if program_name in robot_programs:
+            if program_name in ROBOT_PROGRAMS:
                 try:
-                    program_controller = robot_programs[program_name] \
+                    program_controller = ROBOT_PROGRAMS[program_name] \
                         .execute(json.loads(post_args[b'config'][0].decode()))
                     if program_controller is not None:
-                        running_controllers[program_controller.robot_program.name] = program_controller
+                        RUNNING_CONTROLLERS[program_controller.robot_program.name] = program_controller
                         additional_controls = program_controller.get_additional_controls()
                         running = True
                     else:
@@ -162,10 +166,10 @@ class MainWebHandler(FilesWebHandler):
                     additional_controls = ''
                     status = 'fail'
         else:
-            program_controller = running_controllers[program_name]
+            program_controller = RUNNING_CONTROLLERS[program_name]
             program_controller.request_exit()
             program_controller.wait_to_exit()
-            del running_controllers[program_name]
+            del RUNNING_CONTROLLERS[program_name]
             running = False
 
         self.send_response(200)
@@ -187,10 +191,10 @@ class MainWebHandler(FilesWebHandler):
             return False
 
         program_name = post_args[b'name'][0].decode()
-        running = program_name in running_controllers
+        running = program_name in RUNNING_CONTROLLERS
 
         if running:
-            program_controller = running_controllers[program_name]
+            program_controller = RUNNING_CONTROLLERS[program_name]
             program_config_text = post_args[b'config'][0].decode()
             program_config = json.loads(program_config_text)
             log.info('Changing config of \'%s\' to: %s' % (program_name, program_config_text))
@@ -212,10 +216,10 @@ class MainWebHandler(FilesWebHandler):
             return False
 
         program_name = post_args[b'name'][0].decode()
-        running = program_name in running_controllers
+        running = program_name in RUNNING_CONTROLLERS
 
         if running:
-            program_controller = running_controllers[program_name]
+            program_controller = RUNNING_CONTROLLERS[program_name]
             target = post_args[b'target'][0].decode()
             value = post_args[b'value'][0].decode()
             log.info('Changing config value \'%s\' to \'%s\' in \'%s\'.' % (target, value, program_name))

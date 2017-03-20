@@ -19,9 +19,9 @@
     <script src="./js/plugins.js"></script>
     <script src="./js/main.js"></script>
 </head>
-<body class="clear-fix">
+<body class="clear-fix" onload="updateLog()">
 <h1 id="title">EV3dev Projects</h1>
-<div id="log-container">
+<div id="log-container" class="clear-fix" onclick="updateLog()">
     <div id="log-wrapper">
         <pre id="log-content"></pre>
     </div>

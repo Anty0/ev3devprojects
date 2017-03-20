@@ -27,14 +27,7 @@ class SimulatedEnvironment:
         self._add_device(device_interface, device)
 
 
-def build_simulator(controller, *devices_interfaces: list) -> SimulatedEnvironment:
-    simulated_environment = SimulatedEnvironment(controller)
-    for device_interface in devices_interfaces:
-        simulated_environment.create_device(device_interface)
-    return simulated_environment
-
-
-def _generate_base_ev3_devices(brick_center_position: Position2D):
+def get_base_ev3_devices(brick_center_position: Position2D):
     left_led_position = brick_center_position.offset_by(Position2D(-0.8, -1.5, 0))
     right_led_position = brick_center_position.offset_by(Position2D(0.8, -1.5, 0))
     return [
@@ -45,7 +38,8 @@ def _generate_base_ev3_devices(brick_center_position: Position2D):
     ]
 
 
-def build_ev3_simulator(controller, brick_center_position: Position2D,
-                        *additional_devices_interfaces: list) -> SimulatedEnvironment:
-    devices_interfaces = list(_generate_base_ev3_devices(brick_center_position)) + list(additional_devices_interfaces)
-    return build_simulator(controller, *devices_interfaces)
+def build_simulator(controller, *devices_interfaces: list) -> SimulatedEnvironment:
+    simulated_environment = SimulatedEnvironment(controller)
+    for device_interface in devices_interfaces:
+        simulated_environment.create_device(device_interface)
+    return simulated_environment

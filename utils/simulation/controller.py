@@ -1,12 +1,55 @@
 import math
+import time
 from threading import Thread
 
 from utils.position import Position2D
+from utils.utils import wait_to_cycle_time
 from .map import Map
 
 
 class RobotInfo:
-    pass  # TODO: implement
+    def __init__(self, *devices_interfaces: list):
+        self._prepared = False
+        self._devices = []
+        for devices_interface in devices_interfaces:
+            self._devices.append({'interface': devices_interface, 'device': None})
+
+        self._wheels = []
+        self._sensors = []
+        self._leds = []
+
+    @property
+    def is_prepared(self):
+        return self._prepared
+
+    def prepare_devices(self, sim_environment=None):
+        self._wheels.clear()
+        self._sensors.clear()
+        self._leds.clear()
+
+        for device_info in self._devices:
+            interface = device_info['interface']
+            device = None
+            # TODO: implement
+            device_info['device'] = device
+
+        self._prepared = True
+
+    @property
+    def devices(self):
+        return self._devices
+
+    @property
+    def wheels(self):
+        return self._wheels
+
+    @property
+    def sensors(self):
+        return self._sensors
+
+    @property
+    def leds(self):
+        return self._leds
 
 
 class Controller:
@@ -14,41 +57,10 @@ class Controller:
         self.robot_info = robot_info
         self._map = surrounding_map
         self._position = start_position if start_position is not None else Position2D(0, 0, 0)
-        self._wheels = []
-        self._sensors = []
-        self._leds = []
         self._odometry = None
 
-    def _register_led(self, led):
-        self._leds.append(led)
-
-    def register_led(self, led):
-        self._register_led(led)
-
-    def register_leds(self, *leds):
-        for led in leds:
-            self._register_led(led)
-
-    def _register_sensor(self, sensor):
-        self._sensors.append(sensor)
-
-    def register_sensor(self, sensor):
-        self._register_sensor(sensor)
-
-    def register_sensors(self, *sensors):
-        for sensor in sensors:
-            self._register_sensor(sensor)
-
-    def _register_wheel(self, wheel):
-        self._wheels.append(wheel)
-
-    def register_wheel(self, wheel):
-        self._register_wheel(wheel)
-        self._start_odometry()
-
-    def register_wheels(self, *wheels):
-        for wheel in wheels:
-            self._register_wheel(wheel)
+    def prepare_devices(self, sim_environment=None):
+        self.robot_info.prepare_devices(sim_environment)
         self._start_odometry()
 
     def _start_odometry(self):
@@ -57,8 +69,11 @@ class Controller:
             # self._odometry.start()
 
     def _run_odometry(self):
-        while True:  # TODO: implement and allow starting
-            pass
+        cycle_time = 0.1
+        last_time = time.time()
+        while True:
+            # TODO: implement and allow starting
+            last_time = wait_to_cycle_time('Odometry', last_time, cycle_time)
         pass
 
     def get_map(self):

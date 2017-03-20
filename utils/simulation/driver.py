@@ -1,6 +1,6 @@
 import math
 import time
-from threading import Thread
+from threading import Thread, Event
 
 from ev3dev.auto import TouchSensor, ColorSensor, UltrasonicSensor, GyroSensor, InfraredSensor, SoundSensor, LightSensor
 
@@ -26,6 +26,7 @@ class MotorDriver(DeviceDriver):
     def __init__(self, controller: Controller, device_interface: MotorInterface):
         DeviceDriver.__init__(self, controller, device_interface)
         self._address = device_interface.address
+        self._command_applied_event = Event()
         self._last_command = ''
         self._command = 'stop'
         self._commands = device_interface.commands
@@ -88,6 +89,9 @@ class MotorDriver(DeviceDriver):
                     command_args = {}
                 self._last_command = actual_command
 
+            self._command_applied_event.set()
+            self._command_applied_event.clear()
+
             if actual_command == 'run-forever':
                 speed = command_args['speed']
                 self._position += speed * cycle_time
@@ -101,7 +105,7 @@ class MotorDriver(DeviceDriver):
                 diff = target_pos - actual_pos
                 way = diff / abs(diff) if diff != 0 else 0
                 change = abs(speed * cycle_time) * way
-                if abs(diff) < abs(change):
+                if abs(diff) <= abs(change):
                     self._position = target_pos
                     self._command = self._last_command = 'stop'
                 else:
@@ -170,15 +174,18 @@ class MotorDriver(DeviceDriver):
             self._commands_handler_thread.start()
 
         while self._last_command != self._command:
-            time.sleep(0.02)
+            self._command_applied_event.wait()
 
         if self._command == value:
             self._command = ''
 
             while self._last_command != self._command:
-                time.sleep(0.02)
+                self._command_applied_event.wait()
 
         self._command = value
+
+        while self._last_command != self._command:
+            self._command_applied_event.wait()
 
     @property
     def commands(self):
@@ -276,12 +283,13 @@ class MotorDriver(DeviceDriver):
 
     @property
     def state(self):
-        state_len = len(self._state)
+        state = self._state.copy()
+        state_len = len(state)
         if state_len == 0:
             return ''
-        value = self._state[0]
+        value = state[0]
         for i in range(1, state_len):
-            value += ' ' + self._state[i]
+            value += ' ' + state[i]
         return value
 
     @property
@@ -296,12 +304,13 @@ class MotorDriver(DeviceDriver):
 
     @property
     def stop_actions(self):
-        stop_actions_len = len(self._stop_actions)
+        stop_actions = self._stop_actions.copy()
+        stop_actions_len = len(stop_actions)
         if stop_actions_len == 0:
             return ''
-        value = self._stop_actions[0]
+        value = stop_actions[0]
         for i in range(1, stop_actions_len):
-            value += ' ' + self._stop_actions[i]
+            value += ' ' + stop_actions[i]
         return value
 
     @property
