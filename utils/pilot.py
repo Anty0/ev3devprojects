@@ -262,7 +262,9 @@ class Pilot:
         for wheel in self._wheels:
             wheel.motor.stop()
 
-    def _course_percent_to_speeds(self, course_percent: float, max_speed: float, target_speed: float = None):
+    def _course_percent_to_speeds(self, course_percent: float, max_speed: float,
+                                  target_speed: float = None, mul_speed: float = 1):
+        mul_speed = crop_r(mul_speed, 1)
         if target_speed is None:
             target_speed = max_speed
         if abs(target_speed) > abs(max_speed):
@@ -310,6 +312,8 @@ class Pilot:
             else:
                 speeds = [speed - diff for speed in speeds]
 
+        if mul_speed != 1:
+            speeds = [speed * mul_speed for speed in speeds]
         return speeds
 
     def _course_r_to_speeds(self, course_r, speed, max_speed):
@@ -437,13 +441,20 @@ class Pilot:
                     ratio = min_wheel_speed / max_wheel_speed
                     radius = (min_wheel.offset - ratio * max_wheel.offset) / (ratio - 1)
 
+                positions_tacho = []
                 for i in range(len(speeds_tacho)):
                     wheel = self._wheels[i]
                     speed_tacho = speeds_tacho[i]
                     circuit_unit = 2 * abs(radius + wheel.offset) * math.pi
                     position_unit = circuit_unit / 360 * angle_deg * (speed_tacho / abs(speed_tacho))
-                    position_tacho = position_unit * wheel.unit_ratio * wheel.total_ratio
+                    positions_tacho.append(position_unit * wheel.unit_ratio * wheel.total_ratio)
+
+                for i in range(len(speeds_tacho)):
+                    wheel = self._wheels[i]
+                    speed_tacho = speeds_tacho[i]
+                    position_tacho = positions_tacho[i]
                     wheel.motor.run_to_rel_pos(speed_sp=speed_tacho, position_sp=position_tacho)
+
             elif distance_unit is not None:
                 if distance_unit == 0:
                     return
@@ -479,9 +490,11 @@ class Pilot:
                            max_duty_cycle=max_duty_cycle, async=async)
 
     def _raw_run_percent_drive_unit(self, time_len=None, angle_deg=None, distance_unit=None,
-                                    course_percent=None, speed_unit=None, max_duty_cycle=100, async=False):
+                                    course_percent=None, speed_unit=None, speed_mul=1.0,
+                                    max_duty_cycle=100, async=False):
         self._raw_run_unit(time_len=time_len, angle_deg=angle_deg, distance_unit=distance_unit,
-                           speeds_unit=self._course_percent_to_speeds(course_percent, self._max_speed_unit, speed_unit),
+                           speeds_unit=self._course_percent_to_speeds(course_percent, self._max_speed_unit,
+                                                                      speed_unit, speed_mul),
                            max_duty_cycle=max_duty_cycle, async=async)
 
     def run_timed(self, time_len: float, speeds_tacho: list = None, max_duty_cycle: int = 100, async: bool = False):
@@ -525,28 +538,30 @@ class Pilot:
         self._raw_run_drive_unit(distance_unit=distance_unit, course_r=course_r, speed_unit=speed_unit,
                                  max_duty_cycle=max_duty_cycle, async=async)
 
-    def run_percent_drive_forever(self, course_percent: float, speed_unit: float = None,
+    def run_percent_drive_forever(self, course_percent: float, speed_unit: float = None, speed_mul: float = 1,
                                   max_duty_cycle: int = 100, async: bool = False):
-        self._raw_run_percent_drive_unit(course_percent=course_percent, speed_unit=speed_unit,
+        self._raw_run_percent_drive_unit(course_percent=course_percent, speed_unit=speed_unit, speed_mul=speed_mul,
                                          max_duty_cycle=max_duty_cycle, async=async)
 
     def run_percent_drive_timed(self, time_len: float, course_percent: float, speed_unit: float = None,
-                                max_duty_cycle: int = 100, async: bool = False):
+                                speed_mul: float = 1, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_percent_drive_unit(time_len=time_len, course_percent=course_percent, speed_unit=speed_unit,
-                                         max_duty_cycle=max_duty_cycle, async=async)
+                                         speed_mul=speed_mul, max_duty_cycle=max_duty_cycle, async=async)
 
     def run_percent_drive_to_angle_deg(self, angle_deg: float, course_percent: float, speed_unit: float = None,
-                                       max_duty_cycle: int = 100, async: bool = False):
+                                       speed_mul: float = 1, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_percent_drive_unit(angle_deg=angle_deg, course_percent=course_percent, speed_unit=speed_unit,
-                                         max_duty_cycle=max_duty_cycle, async=async)
+                                         speed_mul=speed_mul, max_duty_cycle=max_duty_cycle, async=async)
 
     def run_percent_drive_to_distance(self, distance_unit: float, course_percent: float, speed_unit: float = None,
-                                      max_duty_cycle: int = 100, async: bool = False):
+                                      speed_mul: float = 1, max_duty_cycle: int = 100, async: bool = False):
         self._raw_run_percent_drive_unit(distance_unit=distance_unit, course_percent=course_percent,
-                                         speed_unit=speed_unit, max_duty_cycle=max_duty_cycle, async=async)
+                                         speed_unit=speed_unit, speed_mul=speed_mul, max_duty_cycle=max_duty_cycle,
+                                         async=async)
 
-    def run_direct(self, course_percent: float = 0, target_duty_cycle: int = 0, max_duty_cycle: int = 0):
-        duty_cycles = self._course_percent_to_speeds(course_percent, max_duty_cycle, target_duty_cycle)
+    def run_direct(self, course_percent: float = 0, target_duty_cycle: int = 100,
+                   mul_duty_cycle: float = 1, max_duty_cycle: int = 0):
+        duty_cycles = self._course_percent_to_speeds(course_percent, max_duty_cycle, target_duty_cycle, mul_duty_cycle)
         for i in range(len(self._wheels)):
             self._wheels[i].motor.run_direct(duty_cycle_sp=duty_cycles[i])
 
@@ -555,8 +570,10 @@ class Pilot:
         for i in range(len(self._wheels)):
             self._wheels[i].motor.duty_cycle_sp = duty_cycles[i]
 
-    def update_duty_cycle(self, course_percent: float, target_duty_cycle: int = 100, max_duty_cycle: int = 100):
-        self.update_duty_cycle_raw(self._course_percent_to_speeds(course_percent, max_duty_cycle, target_duty_cycle))
+    def update_duty_cycle(self, course_percent: float, target_duty_cycle: int = 100,
+                          mul_duty_cycle: float = 1, max_duty_cycle: int = 100):
+        self.update_duty_cycle_raw(self._course_percent_to_speeds(course_percent, max_duty_cycle,
+                                                                  target_duty_cycle, mul_duty_cycle))
 
     def set_stop_action(self, stop_action: str):
         for wheel in self._wheels:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import logging
 import time
 
@@ -358,13 +357,13 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
         if self.get_config_value('DETECT_REFLECT'):
             reflect = [100, 0]
 
-            PILOT.run_percent_drive_to_angle_deg(45, 200, 10)
+            PILOT.run_percent_drive_to_angle_deg(45, 200, speed_mul=0.1)
             PILOT.repeat_while_running(lambda: self._scan_min_max_reflect(reflect))
 
-            PILOT.run_percent_drive_to_angle_deg(90, -200, 10)
+            PILOT.run_percent_drive_to_angle_deg(90, -200, speed_mul=0.1)
             PILOT.repeat_while_running(lambda: self._scan_min_max_reflect(reflect))
 
-            PILOT.run_percent_drive_to_angle_deg(45, 200, 10)
+            PILOT.run_percent_drive_to_angle_deg(45, 200, speed_mul=0.1)
             PILOT.repeat_while_running(lambda: self._scan_min_max_reflect(reflect))
 
         if reflect[0] is not None and reflect[1] is not None and reflect[0] == reflect[1]:

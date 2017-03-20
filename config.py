@@ -276,7 +276,7 @@ AUTO_DRIVER_CONFIG_VALUES = config_values
 
 # Beacon follower
 BEACON_FOLLOWER_TARGET_POWER = 50
-BEACON_FOLLOWER_MAX_SCANNER_POS = 45
+BEACON_FOLLOWER_MAX_SCANNER_POS = 100
 
 config_values = OrderedDict()
 config_values['TARGET_POWER'] = {
