@@ -266,7 +266,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
 
     def _test_sharp_turn(self, target_power) -> bool:
         if not self.get_config_value('SHARP_TURN_DETECT') or not self._steer_regulator.loop_count > 10 \
-                or not abs(self._steer_regulator.last_derivative) > 75:
+                or not abs(self._steer_regulator.last_derivative) > 250:
             # TODO: test and add to config
             return False
 
@@ -312,7 +312,7 @@ class LineFollowBehaviour(Behaviour, ControllerConfigWrapper):
 
         read_val = COLOR_SENSOR_READER.value()
         read_percent = 100 * (read_val - min_reflect) / (max_reflect - min_reflect)
-        course = crop_r(self._steer_regulator.regulate(read_percent) * line_side, 160)
+        course = crop_r(self._steer_regulator.regulate(read_percent) * line_side, 180)
 
         if self._test_sharp_turn(target_power) or self._test_stop_on_line_end():
             return
@@ -350,7 +350,6 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
         read = COLOR_SENSOR_READER.value()
         reflect[0] = min(reflect[0], read)
         reflect[1] = max(reflect[1], read)
-        time.sleep(0)
 
     def on_start(self):
         reflect = [None, None]
@@ -369,6 +368,7 @@ class LineFollowController(SimpleRobotProgramController, BehaviourController):
         if reflect[0] is not None and reflect[1] is not None and reflect[0] == reflect[1]:
             log.error('Failed to detect reflect, falling back to defaults.')
             reflect = [None, None]
+        log.debug('Scan results ' + str(reflect))
         self.set_private_config_value('MIN_REFLECT', reflect[0])
         self.set_private_config_value('MAX_REFLECT', reflect[1])
 
@@ -406,7 +406,19 @@ class LineFollowRobotProgram(RobotProgram):
 
 
 def run():
-    config = {}
+    config = {
+        'REG_STEER_P': 0.9,  # 1
+        'REG_STEER_I': 0.1,  # 0
+        'REG_STEER_D': 0.4,  # 1
+        'TARGET_POWER': 75,  # 40
+        'TARGET_REFLECT': 55,
+        'DETECT_REFLECT': False,
+        'MIN_REFLECT': 25,
+        'MAX_REFLECT': 83,
+
+        'LINE_SIDE': 'right',
+        'TARGET_CYCLE_TIME': 0.02
+    }
     run_program(LineFollowRobotProgram(), config)
 
 

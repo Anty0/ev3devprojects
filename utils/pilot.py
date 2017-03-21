@@ -568,7 +568,8 @@ class Pilot:
     def update_duty_cycle_raw(self, duty_cycles):
         self._validate_len(duty_cycles)
         for i in range(len(self._wheels)):
-            self._wheels[i].motor.duty_cycle_sp = duty_cycles[i]
+            wheel = self._wheels[i]
+            wheel.motor.duty_cycle_sp = duty_cycles[i] * (abs(wheel.gear_ratio) / wheel.gear_ratio)
 
     def update_duty_cycle(self, course_percent: float, target_duty_cycle: int = 100,
                           mul_duty_cycle: float = 1, max_duty_cycle: int = 100):

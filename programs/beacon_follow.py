@@ -40,7 +40,7 @@ class BeaconFollowController(SimpleRobotProgramController):
             SCANNER_MOTOR.duty_cycle_sp = crop_r(self.regulator.regulate(input_val) * ROBOT_MOTOR_SCANNER_GEAR_RATIO)
 
             if distance > 18:
-                PILOT.update_duty_cycle(crop_r(motor_pos / ROBOT_MOTOR_SCANNER_GEAR_RATIO * 2),
+                PILOT.update_duty_cycle(crop_r(motor_pos / ROBOT_MOTOR_SCANNER_GEAR_RATIO * 2 + angle, 200),
                                         target_power / 100 * distance)
             else:
                 PILOT.update_duty_cycle(0, 0)

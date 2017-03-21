@@ -47,6 +47,7 @@ class CalibrateScannerController(SimpleRobotProgramController):
 
         zero_position = position - self.STOP_POSITION_OFFSET
         SCANNER_MOTOR.run_to_abs_pos(speed_sp=60, position_sp=zero_position)
+        SCANNER_MOTOR.wait_until(SCANNER_MOTOR.STATE_RUNNING)
         SCANNER_MOTOR.reset()
 
         reset_hardware()
