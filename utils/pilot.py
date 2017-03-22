@@ -262,25 +262,30 @@ class Pilot:
         for wheel in self._wheels:
             wheel.motor.stop()
 
-    def _course_percent_to_speeds(self, course_percent: float, max_speed: float,
+    def _course_percent_to_speeds(self, course_percent: float, max_speed: float, min_speed: float = 0,
                                   target_speed: float = None, mul_speed: float = 1):
+        min_speed = abs(min_speed)
+        max_speed = abs(max_speed)
         mul_speed = crop_r(mul_speed, 1)
+
+        if max_speed == 0 or mul_speed == 0 or min_speed > max_speed:
+            return [0 in range(len(self._wheels))]
+
         if target_speed is None:
             target_speed = max_speed
-        if abs(target_speed) > abs(max_speed):
-            target_speed = max_speed * (target_speed / abs(target_speed))
-
-        speeds = []
+        else:
+            target_speed_abs = abs(target_speed)
+            if target_speed_abs > max_speed:
+                target_speed = max_speed * (target_speed / target_speed_abs)
 
         if course_percent == 0:
-            for i in range(len(self._wheels)):
-                speeds.append(target_speed)
-            return speeds
+            return [target_speed in range(len(self._wheels))]
 
-        if max_speed == 0:
-            for i in range(len(self._wheels)):
-                speeds.append(0)
-            return speeds
+        if target_speed != 0 and min_speed == max_speed:
+            speed = min_speed * (abs(target_speed) / target_speed)
+            return [speed in range(len(self._wheels))]
+
+        speeds = []
 
         # max_pos = self._max_offset * (-1 if course_percent > 0 else 1)
         # for wheel in self._wheels:
@@ -308,12 +313,20 @@ class Pilot:
 
         if diff != 0:
             if max_gen_speed - diff > max_speed or min_gen_speed - diff < -max_speed:
-                speeds = [speed / (max_speed + abs(diff)) * max_speed for speed in speeds]
+                target_mul = max_speed / (max_speed + abs(diff))
+                speeds = [speed * target_mul for speed in speeds]
             else:
                 speeds = [speed - diff for speed in speeds]
 
         if mul_speed != 1:
             speeds = [speed * mul_speed for speed in speeds]
+
+        if min_speed != 0:
+            max_found_speed = max((abs(speed) for speed in speeds))
+            if max_found_speed < min_speed:
+                target_mul = min_speed / max_found_speed
+                speeds = [speed * target_mul for speed in speeds]
+
         return speeds
 
     def _course_r_to_speeds(self, course_r, speed, max_speed):
@@ -493,7 +506,7 @@ class Pilot:
                                     course_percent=None, speed_unit=None, speed_mul=1.0,
                                     max_duty_cycle=100, async=False):
         self._raw_run_unit(time_len=time_len, angle_deg=angle_deg, distance_unit=distance_unit,
-                           speeds_unit=self._course_percent_to_speeds(course_percent, self._max_speed_unit,
+                           speeds_unit=self._course_percent_to_speeds(course_percent, self._max_speed_unit, 0,
                                                                       speed_unit, speed_mul),
                            max_duty_cycle=max_duty_cycle, async=async)
 
@@ -560,8 +573,9 @@ class Pilot:
                                          async=async)
 
     def run_direct(self, course_percent: float = 0, target_duty_cycle: int = 100,
-                   mul_duty_cycle: float = 1, max_duty_cycle: int = 0):
-        duty_cycles = self._course_percent_to_speeds(course_percent, max_duty_cycle, target_duty_cycle, mul_duty_cycle)
+                   mul_duty_cycle: float = 1, min_duty_cycle: int = 0, max_duty_cycle: int = 0):
+        duty_cycles = self._course_percent_to_speeds(course_percent, max_duty_cycle, min_duty_cycle,
+                                                     target_duty_cycle, mul_duty_cycle)
         for i in range(len(self._wheels)):
             self._wheels[i].motor.run_direct(duty_cycle_sp=duty_cycles[i])
 
@@ -572,8 +586,8 @@ class Pilot:
             wheel.motor.duty_cycle_sp = duty_cycles[i] * (abs(wheel.gear_ratio) / wheel.gear_ratio)
 
     def update_duty_cycle(self, course_percent: float, target_duty_cycle: int = 100,
-                          mul_duty_cycle: float = 1, max_duty_cycle: int = 100):
-        self.update_duty_cycle_raw(self._course_percent_to_speeds(course_percent, max_duty_cycle,
+                          mul_duty_cycle: float = 1, min_duty_cycle: int = 0, max_duty_cycle: int = 100):
+        self.update_duty_cycle_raw(self._course_percent_to_speeds(course_percent, max_duty_cycle, min_duty_cycle,
                                                                   target_duty_cycle, mul_duty_cycle))
 
     def set_stop_action(self, stop_action: str):

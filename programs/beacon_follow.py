@@ -12,14 +12,14 @@ class BeaconFollowController(SimpleRobotProgramController):
     def __init__(self, robot_program, config=None):
         super().__init__(robot_program, config)
 
-        self.regulator = PercentRegulator(const_p=0.15, const_i=0.03, const_d=0.12, const_target=50)
+        self.scanner_position_regulator = PercentRegulator(const_p=0.15, const_i=0.03, const_d=0.12, const_target=50)
 
         self._stop = False
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
     def _run(self):
-        self.regulator.reset()
+        self.scanner_position_regulator.reset()
         INFRARED_SENSOR.mode = INFRARED_SENSOR.MODE_IR_SEEK
 
         SCANNER_MOTOR.run_direct(duty_cycle_sp=0)
@@ -37,13 +37,14 @@ class BeaconFollowController(SimpleRobotProgramController):
             if abs(motor_pos) > max_scanner_pos:
                 input_val += (abs(motor_pos) - max_scanner_pos) / ROBOT_MOTOR_SCANNER_GEAR_RATIO \
                              * (motor_pos / abs(motor_pos))
-            SCANNER_MOTOR.duty_cycle_sp = crop_r(self.regulator.regulate(input_val) * ROBOT_MOTOR_SCANNER_GEAR_RATIO)
+            SCANNER_MOTOR.duty_cycle_sp = crop_r(
+                self.scanner_position_regulator.regulate(input_val) * ROBOT_MOTOR_SCANNER_GEAR_RATIO)
 
             if distance > 18:
-                PILOT.update_duty_cycle(crop_r(motor_pos / ROBOT_MOTOR_SCANNER_GEAR_RATIO * 2 + angle, 200),
-                                        target_power / 100 * distance)
+                PILOT.update_duty_cycle(crop_r((motor_pos / ROBOT_MOTOR_SCANNER_GEAR_RATIO + angle) * 2, 200),
+                                        mul_duty_cycle=(target_power / 100) * (distance / 100))
             else:
-                PILOT.update_duty_cycle(0, 0)
+                PILOT.update_duty_cycle(0, target_duty_cycle=0, mul_duty_cycle=0)
 
             last_time = wait_to_cycle_time('BeaconFollow', last_time, 0.04)
 
@@ -51,12 +52,12 @@ class BeaconFollowController(SimpleRobotProgramController):
 
     def on_config_change(self):
         super().on_config_change()
-        self.regulator.reset()
+        self.scanner_position_regulator.reset()
 
     def on_config_value_change(self, name, new_value):
         super().on_config_value_change(name, new_value)
         if name == 'MAX_SCANNER_POS':
-            self.regulator.reset()
+            self.scanner_position_regulator.reset()
 
     def request_exit(self):
         self._stop = True
